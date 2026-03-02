@@ -5,8 +5,8 @@
 1. Version: Pre-alpha（共用型別 + Event Envelope + WsFrame + 身份管理 + 事件簽名 + Hub DB + REST API + WebSocket 伺服器 + 配對狀態機 + Plugin 核心模組 + E2E 加密模組 + Hub Web UI + Asset Gen CLI + PBT P1-P5/P7/P8/P11/P14-P20/P21/P24/P25/P16 完成）
 2. Core commands / features: AgentVerse — OpenClaw Agent 社群＋遊戲化成長＋DNA 交換平台
 3. Regression baseline: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check` 全綠
-4. Release / merge status: N/A
-5. Active branch / environment: 主工作區根目錄
+4. Release / merge status: Initial commit pushed to `github.com/Adamchanadam/AgentVerse` (main branch)
+5. Active branch / environment: `main` branch @ `D:\_Adam_Projects\AgentVerse`
 6. External platforms / dependencies in scope: OpenClaw（openclaw-main/ 為參考 codebase）、PostgreSQL、Neon（可選）、React/Next.js、Fastify
 7. Conda environment: `adamlab4_env`（Node v22.14.0、npm 10.9.2、pnpm 9.15.4）
 
@@ -14,7 +14,7 @@
 
 1. Product / System Layer: AgentVerse Hub + OpenClaw Channel Plugin `agentverse` + Local Trials Runner
 2. Development Governance Layer: AGENTS.md 治理框架 + Kiro spec-driven workflow
-3. Current task belongs to which layer: Product（coding 階段 — 任務 15 Asset Gen CLI 完成，準備任務 16 部署配置）
+3. Current task belongs to which layer: Product（coding 階段 — 任務 15 完成，git init + push 完成，準備任務 16 部署配置）
 4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格需對齊官方 codebase，避免 spec 與實際 API 漂移
 
 ## Mandatory Start Checklist
@@ -116,9 +116,9 @@
 
 ## Consolidation Watchlist
 
-1. Rules currently duplicated across files: dev_spec1.md 與 requirements.md 有內容重疊（dev_spec1.md 為原始方案文檔，requirements.md 為正式 spec SSOT）
+1. Rules currently duplicated across files: 無（dev_spec1/2 已移至 ref_doc/，不再追蹤）
 2. Areas showing accretive drift: 無
-3. Candidate items for consolidation / retirement: dev_spec1.md + dev_spec2_Addendum.md 在 spec 完成後可標記為 archived reference
+3. Candidate items for consolidation / retirement: 無（dev_spec1.md + dev_spec2_Addendum.md 已歸檔至 ref_doc/）
 
 ## Update Rule
 
@@ -129,22 +129,27 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 ## Last Session Record
 
 1. UTC date: 2026-03-02
-2. Session ID: Claude_20260302_1920
+2. Session ID: Claude_20260302_2000
 3. Completed:
-   - 確認 Antigravity 10 張 PNG 重新生成完畢（INC-20260302 事故完全關閉）
-   - 修正文件中 concepts_backup 誤描述 + ref_doc 過時路徑
-   - 分析 repo 檔案分類，建立 .gitignore 方案
-   - 決定目錄改名 `OpenClaw` → `AgentVerse`
+   - 驗證目錄改名 `OpenClaw` → `AgentVerse` 成功（專案檔案 + Claude memory 搬遷）
+   - `pnpm install --force` 修復 node_modules shims 中的舊路徑
+   - 更新 .gitignore：新增 `ref_doc/`, `/public/`, `dev/ui-ux/concepts_backup/`, `.agent/`, `.claude/`
+   - `git init` + `git add .`（238 files） + initial commit `c12c573`
+   - `git push -u origin main` → `github.com/Adamchanadam/AgentVerse`
+   - MEMORY.md 更新 Root 路徑
 4. Pending:
-   - **使用者手動**：改名目錄 `D:\_Adam_Projects\OpenClaw` → `D:\_Adam_Projects\AgentVerse` + 搬 Claude memory
-   - **下一 session**：git init → .gitignore 更新 → initial commit → push to `github.com/Adamchanadam/AgentVerse`
-   - 任務 16：Self-Hosted 部署
+   - 任務 16：Self-Hosted 部署（Docker Compose + 部署配置）
+   - Integration tests
 5. Next priorities (max 3):
-   - Git init + push to GitHub
    - 任務 16（Docker Compose + 部署配置）
    - Integration tests
+   - Precommit hook setup（`scripts/precommit-guard.mjs`）
 6. Risks / blockers: 無
-7. Validation: test 350/350 ✅（未改程式碼，只更新文件）
+7. Validation: typecheck ✅ lint ✅ test 350/350 ✅ format:check ⚠️（3 pre-existing Prettier warnings）
+
+### Previous Session Reference（Claude_20260302_1920）
+
+- 確認 Antigravity PNG 重新生成完畢，修正文件路徑，建立 .gitignore 方案，決定改名 AgentVerse
 
 ### Previous Session Reference（Antigravity_20260302_1910）
 
@@ -306,7 +311,7 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 
 ### 源文檔（參考用，非 SSOT）
 
-- `dev_spec1.md`：原始完整方案文檔
-- `dev_spec2_Addendum.md`：補充建議（協議/加密/反濫用/Trials/UX）
+- `ref_doc/dev_spec1.md`：原始完整方案文檔（已歸檔，不追蹤）
+- `ref_doc/dev_spec2_Addendum.md`：補充建議（已歸檔，不追蹤）
 - `research1_init_idea_gpt.md`：初始研究（OpenClaw 機制與可行性）
 - `research2_db_security_gpt.md`：DB/安全研究與 UX 遊戲回路

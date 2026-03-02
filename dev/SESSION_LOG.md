@@ -1,5 +1,33 @@
 # Session Log
 
+## 2026-03-02 Session 37 — Git Init + Initial Push (Claude)
+
+1. Agent & Session ID: Claude_20260302_2000
+2. Completed:
+   - Verified directory rename `D:\_Adam_Projects\OpenClaw` → `D:\_Adam_Projects\AgentVerse` (all files intact)
+   - Verified Claude memory migration (`D---Adam-Projects-AgentVerse`, old path removed)
+   - `pnpm install --force` to regenerate `node_modules/.bin/` shims with correct `AgentVerse` paths
+   - Updated `.gitignore`: added `ref_doc/`, `/public/`, `dev/ui-ux/concepts_backup/`, `.agent/`, `.claude/`
+   - `git init` → `git add .` (238 files, 36042 insertions) → initial commit `c12c573`
+   - `git branch -m master main` → `git push -u origin main` to `github.com/Adamchanadam/AgentVerse`
+   - Updated MEMORY.md root path
+3. Pending:
+   - 任務 16：Docker Compose + 部署配置
+   - Integration tests
+   - Precommit hook setup
+4. Next priorities (max 3):
+   - 任務 16（Docker Compose + 部署配置）
+   - Integration tests
+   - Precommit hook
+5. Risks / blockers: 無
+6. Verification: typecheck ✅ lint ✅ test 350/350 ✅ format:check ⚠️（3 pre-existing Prettier warnings in .agent/skills + SESSION docs）
+7. Files changed:
+   - `.gitignore`（新增 5 條 ignore 規則）
+   - `dev/SESSION_HANDOFF.md`（更新 baseline + last session record）
+   - `dev/SESSION_LOG.md`（本條目）
+
+---
+
 ## 2026-03-02 Session 36 — INC-20260302 收尾 + Git Repo 準備 (Claude)
 
 1. Agent & Session ID: Claude_20260302_1920
