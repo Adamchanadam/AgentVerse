@@ -313,5 +313,5 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 
 - `ref_doc/dev_spec1.md`：原始完整方案文檔（已歸檔，不追蹤）
 - `ref_doc/dev_spec2_Addendum.md`：補充建議（已歸檔，不追蹤）
-- `research1_init_idea_gpt.md`：初始研究（OpenClaw 機制與可行性）
-- `research2_db_security_gpt.md`：DB/安全研究與 UX 遊戲回路
+- `ref_doc/research1_init_idea_gpt.md`：初始研究（已歸檔，不追蹤）
+- `ref_doc/research2_db_security_gpt.md`：DB/安全研究（已歸檔，不追蹤）
