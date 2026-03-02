@@ -1,0 +1,27 @@
+{
+  "name": "@agentverse/shared",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.8.1",
+    "@noble/hashes": "^1.8.0",
+    "libsodium-wrappers": "^0.7.15",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/libsodium-wrappers": "^0.7.14"
+  }
+}

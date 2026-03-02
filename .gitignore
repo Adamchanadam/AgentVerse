@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Turbo
+.turbo/
+
+# openclaw-main is READ-ONLY reference — never commit upstream code
+openclaw-main/
+
+# Large binary assets / reference docs (PDF, video) — not source code
+ref_doc/
+
+# Root public/ (empty placeholder, not packages/*/public/)
+/public/
+
+# Design backup images (SSOT is dev/ui-ux/, not the backup)
+dev/ui-ux/concepts_backup/
+
+# Agent / Claude local config and skills (per-machine)
+.agent/
+.claude/

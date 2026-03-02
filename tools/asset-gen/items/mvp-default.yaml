@@ -1,0 +1,141 @@
+# SSOT: mvp-default Asset Pack Spec
+# Purpose: single source of truth for style + constraints + items
+# Notes:
+# - Phase 0: generate placeholders to lock UI sizing/layout.
+# - Phase 1: generate final assets via nanobanana MCP generate_image, then human-curate + commit.
+
+style_base: >
+  Hybrid retro aesthetic: Game Boy Advance-era pixel graphics fused with 256-color (8-bit) terminal/BBS vibes.
+  Crisp pixel edges, strong readability at small sizes, expanded 256-color palette, subtle dithering.
+  Think "handheld RPG UI" meets "modern retro UI": grid-aligned, minimal noise, playful but disciplined.
+  No gradients; use flat color blocks + dithering only. Keep compositions centered and iconic.
+  Avoid photorealism, avoid 3D, avoid modern glossy UI. Pixel-perfect, 1x scale, no blur.
+
+constraints:
+  pixel_grid: "1px aligned, no anti-aliasing"
+
+generation:
+  # Phase 0: placeholder 只為鎖定 UI 尺寸與版面，可用更簡單幾何/ASCII 紋理
+  # Phase 1: final 才嚴格遵循 style_base 並用 nanobanana 生成 + 人工挑選
+  modes:
+    placeholder:
+      prompt_suffix: "PLACEHOLDER ONLY: simple geometry or ASCII-like pixel pattern, ultra-minimal, no fine detail."
+      palette_max_colors_override: 4
+    final:
+      prompt_suffix: "FINAL: strictly follow style_base, use rich 256-color 8-bit palette, include subtle dithering, keep high readability at small size."
+      palette_max_colors_override: 256
+
+defaults:
+  by_category:
+    avatars:
+      size: "64x64"
+      transparentBackground: true
+      tileable: false
+    badges:
+      size: "32x32"
+      transparentBackground: true
+      tileable: false
+    card_frames:
+      size: "320x180"
+      transparentBackground: true
+      tileable: false
+    backgrounds:
+      size: "128x128"
+      transparentBackground: false
+      tileable: true
+  palette:
+    max_colors_per_asset: 256
+    palette_hint: "retro handheld palette mixed with rich 256-color (8-bit) BBS tones; high contrast"
+  typography:
+    allow_text_in_asset: false
+    note: "Text labels are rendered by UI using monospace; do not bake text into images."
+  backgrounds:
+    tileable_by_default: true
+    tile_size_px: 128
+    noise_level: "low"
+  transparency:
+    default_transparent_background: true
+    background_assets_transparent: false
+  output:
+    format: "png"
+    naming: "id + .png"
+  safety:
+    disallow:
+      - "logos/brands"
+      - "real person faces"
+      - "copyrighted characters"
+
+items:
+  # --- Avatars (square, transparent) ---
+  - id: "avatar_default_01"
+    category: "avatars"
+    size: "64x64"
+    theme: "neutral pixel mascot silhouette; friendly; minimal details; ANSI terminal vibe"
+    use_case: "default agent avatar option A"
+    transparentBackground: true
+
+  - id: "avatar_default_02"
+    category: "avatars"
+    size: "64x64"
+    theme: "neutral pixel robot head; simple geometry; 2-tone shading + light dithering"
+    use_case: "default agent avatar option B"
+    transparentBackground: true
+
+  - id: "avatar_default_03"
+    category: "avatars"
+    size: "64x64"
+    theme: "neutral pixel creature/companion icon; abstract; readable at small size"
+    use_case: "default agent avatar option C"
+    transparentBackground: true
+
+  # --- Badges (square, transparent) ---
+  - id: "badge_first_pair"
+    category: "badges"
+    size: "32x32"
+    theme: "pixel badge icon representing 'link established'; two nodes connected by a line; subtle sparkle"
+    use_case: "achievement badge for first pairing"
+    transparentBackground: true
+
+  - id: "badge_security_guard"
+    category: "badges"
+    size: "32x32"
+    theme: "pixel shield + checkmark; ANSI terminal vibe; minimal; high contrast"
+    use_case: "badge for safe governance / deny-wins discipline"
+    transparentBackground: true
+
+  - id: "badge_messenger"
+    category: "badges"
+    size: "32x32"
+    theme: "pixel envelope/message glyph; indicates E2E relay; no text"
+    use_case: "badge for first encrypted message relay"
+    transparentBackground: true
+
+  - id: "badge_trial_pass"
+    category: "badges"
+    size: "32x32"
+    theme: "pixel star or glowing aura symbol; golden hues; high prestige feel"
+    use_case: "badge indicating completion of local trials"
+    transparentBackground: true
+
+  - id: "icon_genepack_node"
+    category: "badges"
+    size: "32x32"
+    theme: "abstract pixel node/circuit crossing; techy; glowing cyan or green"
+    use_case: "icon representing a GenePack node or capability transfer"
+    transparentBackground: true
+
+  # --- Card frames (transparent center) ---
+  - id: "frame_basic"
+    category: "card_frames"
+    size: "320x180"
+    theme: "GBA-style UI window frame; pixel bevel; corner decorations; ANSI subtle hatch pattern; center transparent"
+    use_case: "agent card frame for AgentDex"
+    transparentBackground: true
+
+  # --- Backgrounds (non-transparent, tileable) ---
+  - id: "bg_agentdex_tile"
+    category: "backgrounds"
+    size: "128x128"
+    theme: "tileable pixel background; subtle ANSI scanline/hatch; low-noise; feels like retro handheld menu screen"
+    use_case: "AgentDex page background tile"
+    transparentBackground: false

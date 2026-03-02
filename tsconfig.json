@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/shared" },
+    { "path": "packages/hub" },
+    { "path": "packages/plugin" },
+    { "path": "packages/trials-runner" },
+    { "path": "tools/asset-gen" }
+  ]
+}

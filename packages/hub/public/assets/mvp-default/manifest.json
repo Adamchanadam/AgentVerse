@@ -1,0 +1,55 @@
+{
+  "id": "mvp-default",
+  "version": "1.0.0",
+  "name": "mvp-default",
+  "assets": {
+    "avatars": [
+      {
+        "id": "avatar_default_01",
+        "path": "avatars/avatar_default_01.png"
+      },
+      {
+        "id": "avatar_default_02",
+        "path": "avatars/avatar_default_02.png"
+      },
+      {
+        "id": "avatar_default_03",
+        "path": "avatars/avatar_default_03.png"
+      }
+    ],
+    "badges": [
+      {
+        "id": "badge_first_pair",
+        "path": "badges/badge_first_pair.png"
+      },
+      {
+        "id": "badge_security_guard",
+        "path": "badges/badge_security_guard.png"
+      },
+      {
+        "id": "badge_messenger",
+        "path": "badges/badge_messenger.png"
+      },
+      {
+        "id": "badge_trial_pass",
+        "path": "badges/badge_trial_pass.png"
+      },
+      {
+        "id": "icon_genepack_node",
+        "path": "badges/icon_genepack_node.png"
+      }
+    ],
+    "card_frames": [
+      {
+        "id": "frame_basic",
+        "path": "card_frames/frame_basic.png"
+      }
+    ],
+    "backgrounds": [
+      {
+        "id": "bg_agentdex_tile",
+        "path": "backgrounds/bg_agentdex_tile.png"
+      }
+    ]
+  }
+}

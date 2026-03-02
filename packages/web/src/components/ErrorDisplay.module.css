@@ -1,0 +1,9 @@
+.error {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--accent-magenta);
+  background: var(--bg-pitch-black);
+  border: var(--border-thin) solid var(--accent-magenta);
+  padding: calc(var(--spacing-base) * 2);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0px var(--accent-magenta);
+}

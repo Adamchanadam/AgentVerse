@@ -1,0 +1,29 @@
+{
+  "name": "@agentverse/plugin",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "@agentverse/shared": "workspace:*",
+    "@noble/curves": "^1.8.1",
+    "@noble/hashes": "^1.8.0",
+    "ws": "^8.19.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "fast-check": "^3.23.0"
+  }
+}

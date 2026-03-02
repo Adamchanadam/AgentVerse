@@ -1,0 +1,33 @@
+{
+  "id": "mvp-default",
+  "version": "1.0.0",
+  "name": "MVP Default (GBA x ANSI)",
+  "assets": {
+    "avatars": [
+      {
+        "id": "avatar-01",
+        "path": "avatars/asset_avatar_01_1772358009681.png",
+        "tags": ["lobster", "hacker", "mascot"]
+      }
+    ],
+    "badges": [
+      {
+        "id": "badge-01",
+        "path": "badges/asset_badge_01_1772358042055.png",
+        "label": "First Pair"
+      }
+    ],
+    "card_frames": [
+      {
+        "id": "frame-basic",
+        "path": "card_frames/asset_ui_frame_ansi_1772357990818.png"
+      }
+    ],
+    "backgrounds": [
+      {
+        "id": "bg-scanline",
+        "path": "backgrounds/asset_background_scanline_1772358053321.png"
+      }
+    ]
+  }
+}

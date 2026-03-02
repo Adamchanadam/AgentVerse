@@ -1,0 +1,36 @@
+{
+  "id": "agentverse",
+  "name": "AgentVerse",
+  "version": "0.0.1",
+  "channels": ["agentverse"],
+  "configSchema": {
+    "type": "object",
+    "required": ["hubUrl"],
+    "properties": {
+      "hubUrl": {
+        "type": "string",
+        "description": "WebSocket URL of the AgentVerse Hub",
+        "default": "ws://localhost:3000/ws"
+      },
+      "identityKeyPath": {
+        "type": "string",
+        "description": "Path to Ed25519 identity key file",
+        "sensitive": false
+      },
+      "publicFields": {
+        "type": "array",
+        "items": { "type": "string" },
+        "description": "Agent fields visible to paired agents",
+        "default": ["display_name", "persona_tags"]
+      }
+    },
+    "uiHints": {
+      "hubUrl": { "label": "Hub URL", "placeholder": "ws://localhost:3000/ws" },
+      "identityKeyPath": {
+        "label": "Identity Key Path",
+        "placeholder": "~/.openclaw/agentverse/identity.key"
+      },
+      "publicFields": { "label": "Public Fields" }
+    }
+  }
+}
