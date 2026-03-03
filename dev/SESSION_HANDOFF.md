@@ -14,7 +14,7 @@
 
 1. Product / System Layer: AgentVerse Hub + OpenClaw Channel Plugin `agentverse` + Local Trials Runner
 2. Development Governance Layer: AGENTS.md 治理框架 + Kiro spec-driven workflow
-3. Current task belongs to which layer: Product（coding 階段 — 任務 18 E2E 整合測試完成，準備 Task 19 最終 Checkpoint）
+3. Current task belongs to which layer: Product（MVP Phase 0+1 全部完成 — Task 1-19 done, 408/408 tests）
 4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格已對齊 v2026.3.1 官方 codebase（Session 38 修正 9 項 misalignment + Session 39 深度審計修正 7 項）；持續監控後續版本變化
 
 ## Mandatory Start Checklist
@@ -34,9 +34,9 @@
 
 ## Open Priorities
 
-1. 任務 19：最終 Checkpoint — 確認所有 MVP 測試通過
-2. Per-operation rate limits（AgentCard ≤10/min, pairing ≤30/hr）— deferred to Task 7/8
-3. TTL-mode catchup offline_messages JOIN（MVP 不影響，啟用 TTL 前需完成）
+1. **MVP 完成** ✅ — Task 1-19 全部通過，Phase 0+1 交付
+2. Phase 2 Backlog：B1 Trials Runner、B2 成長頁面
+3. Phase 3 Backlog：B3 GenePack 交換、B4 Lineage、B5 Fusion Lab
 
 ## Known Risks / Blockers
 
@@ -131,24 +131,20 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 ## Last Session Record
 
 1. UTC date: 2026-03-03
-2. Session ID: Claude_20260303_0700
+2. Session ID: Claude_20260303_0800
 3. Completed:
-   - **Task 17: Checkpoint**（386/386 tests, all gates green）
-   - **Task 18: E2E 整合測試**（5 子任務全部完成，22 new tests）
-     - PT1: `envelope-builder.ts` — buildSignedEnvelope() helper + fixed WsFrame stubs in channel-plugin.ts + cli-commands.ts
-     - PT2: `setup.ts` — E2E test infrastructure（createE2EHub, connectAndAuth with lastSeenServerSeq, registerAgent, createSignedEnvelope, submitAndWait, FrameCollector）+ `infra.test.ts`（3 tests）
-     - PT3: `pairing-flow.test.ts`（3 tests）— pair.requested→pair.approved, duplicate rejection, non-existent pair rejection. Fixed: pair_id is server-generated UUID, not concatenated agent IDs; query DB via hub.app.db.
-     - PT4: `encrypted-messaging.test.ts`（3 tests）— full X25519+HKDF+XChaCha20 encrypt→relay→decrypt round-trip, non-active pair rejection, not-in-pairing rejection
-     - PT5: `reconnect-catchup.test.ts`（3 tests）— missed events catchup, empty catchup, no catchup without seq. Enhanced connectAndAuth to accept ConnectOptions with lastSeenServerSeq.
-     - PT6: `security-scenarios.test.ts`（5 tests）— replay idempotency, tampered sig, pending pair relay, revoked pair relay, tampered payload
-   - **P14/P15 PBT timeout fix**：Added explicit `{ timeout: 15_000 }` to property-based tests that were flaky under full-suite load
+   - **PROJECT_MASTER_SPEC.md 對齊**：§13.1 plugin modules、§15 E2E patterns、§16 Change History
+   - **Task 19: 最終 Checkpoint — MVP COMPLETE** ✅
+     - typecheck ✅ lint ✅ test 408/408 ✅ format:check ✅
+     - 需求覆蓋審計：17/17 MVP requirements (1-12, 21-23, 25-26) 全部有對應任務與測試
+     - tasks.md Task 19 標記 [x]
 4. Pending:
-   - 任務 19：最終 Checkpoint
+   - Phase 2/3 Backlog（B1-B7）
 5. Next priorities (max 3):
-   - 任務 19（最終 Checkpoint）
-   - Phase 2/3 backlog（Trials Runner, GenePack 交換）
-   - Deployment hardening（Docker Compose 已完成 16.1）
-6. Risks / blockers: TTL-mode catchup 未 JOIN offline_messages（啟用前需完成）
+   - Phase 2：B1 Trials Runner、B2 成長頁面
+   - Phase 3：B3 GenePack 交換
+   - 可選：TTL-mode catchup offline_messages JOIN
+6. Risks / blockers: TTL-mode catchup 未 JOIN offline_messages（啟用前需完成）；6 optional PBTs deferred（P12/P13/P23 + 1.5/3.4/3.5）
 7. Validation: typecheck ✅ lint ✅ test 408/408 ✅ format:check ✅
 
 ### Previous Session Reference（Claude_20260302_2000）

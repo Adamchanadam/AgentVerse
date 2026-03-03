@@ -156,11 +156,11 @@ node scripts/precommit-guard.mjs  # exit 0 = 正常；exit 1 = openclaw-main 有
 
 ## 7. 測試策略
 
-| 類型              | 框架                  | 說明                                                       |
-| ----------------- | --------------------- | ---------------------------------------------------------- |
-| 單元測試          | Vitest                | 具體範例、邊界案例                                         |
-| 屬性測試（PBT）   | Vitest + fast-check   | 通用屬性（P1-P25）；MVP 必做：P1/P2/P8/P14/P15/P16/P17/P25 |
-| 端到端測試（E2E） | Vitest + in-process Hub (pg-mem) | 任務 18；涵蓋配對流程、加密訊息、斷線重連、安全場景 |
+| 類型              | 框架                             | 說明                                                       |
+| ----------------- | -------------------------------- | ---------------------------------------------------------- |
+| 單元測試          | Vitest                           | 具體範例、邊界案例                                         |
+| 屬性測試（PBT）   | Vitest + fast-check              | 通用屬性（P1-P25）；MVP 必做：P1/P2/P8/P14/P15/P16/P17/P25 |
+| 端到端測試（E2E） | Vitest + in-process Hub (pg-mem) | 任務 18；涵蓋配對流程、加密訊息、斷線重連、安全場景        |
 
 Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:check` 必須全綠。
 
@@ -249,34 +249,44 @@ Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:c
 
 ### Task 15：Asset Gen CLI
 
-| 任務     | 狀態    | 重點                                                                           |
-| -------- | ------- | ------------------------------------------------------------------------------ |
+| 任務      | 狀態    | 重點                                                                             |
+| --------- | ------- | -------------------------------------------------------------------------------- |
 | 15.1–15.2 | ✅ 完成 | 5 模組（types, yaml-parser, manifest-generator, placeholder-gen, cli）+ 33 tests |
-| **驗證** | ✅ 通過 | **348/348 tests**                                                              |
+| **驗證**  | ✅ 通過 | **348/348 tests**                                                                |
 
 ### Task 16–17：ChannelPlugin + 部署 + Checkpoints
 
-| 任務              | 狀態    | 重點                                                                                           |
-| ----------------- | ------- | ---------------------------------------------------------------------------------------------- |
-| 16.1              | ✅ 完成 | Docker Compose（Hub + PostgreSQL）                                                             |
-| 16.2              | ✅ 完成 | ChannelPlugin 介面 + Plugin entry point + CLI 子命令 + Status Tool + OpenClaw type stubs       |
-| 16.3              | ✅ 完成 | Integration Smoke Test（7 tests mock OpenClaw Plugin API）                                     |
-| **17 Checkpoint** | ✅ 通過 | **386/386 tests**                                                                              |
+| 任務              | 狀態    | 重點                                                                                     |
+| ----------------- | ------- | ---------------------------------------------------------------------------------------- |
+| 16.1              | ✅ 完成 | Docker Compose（Hub + PostgreSQL）                                                       |
+| 16.2              | ✅ 完成 | ChannelPlugin 介面 + Plugin entry point + CLI 子命令 + Status Tool + OpenClaw type stubs |
+| 16.3              | ✅ 完成 | Integration Smoke Test（7 tests mock OpenClaw Plugin API）                               |
+| **17 Checkpoint** | ✅ 通過 | **386/386 tests**                                                                        |
 
 ### Task 18：E2E 整合測試
 
-| 任務 | 狀態    | 重點                                                                                     |
-| ---- | ------- | ---------------------------------------------------------------------------------------- |
-| 18.1 | ✅ 完成 | E2E 基礎設施：in-process Hub (pg-mem) + connectAndAuth + FrameCollector + 3 infra tests  |
-| 18.2 | ✅ 完成 | 配對流程：pair.requested→pair.approved + duplicate/non-existent rejection — 3 tests      |
-| 18.3 | ✅ 完成 | 加密訊息：X25519+HKDF+XChaCha20 encrypt→relay→decrypt round-trip — 3 tests              |
-| 18.4 | ✅ 完成 | 斷線重連：catchup replay + empty catchup + no-seq skip — 3 tests                         |
-| 18.5 | ✅ 完成 | 安全場景：replay/tamper/pending-pair/revoked-pair/payload-tamper — 5 tests               |
-| **驗證** | ✅ 通過 | **408/408 tests**                                                                    |
+| 任務     | 狀態    | 重點                                                                                    |
+| -------- | ------- | --------------------------------------------------------------------------------------- |
+| 18.1     | ✅ 完成 | E2E 基礎設施：in-process Hub (pg-mem) + connectAndAuth + FrameCollector + 3 infra tests |
+| 18.2     | ✅ 完成 | 配對流程：pair.requested→pair.approved + duplicate/non-existent rejection — 3 tests     |
+| 18.3     | ✅ 完成 | 加密訊息：X25519+HKDF+XChaCha20 encrypt→relay→decrypt round-trip — 3 tests              |
+| 18.4     | ✅ 完成 | 斷線重連：catchup replay + empty catchup + no-seq skip — 3 tests                        |
+| 18.5     | ✅ 完成 | 安全場景：replay/tamper/pending-pair/revoked-pair/payload-tamper — 5 tests              |
+| **驗證** | ✅ 通過 | **408/408 tests**                                                                       |
+
+### Task 19：最終 Checkpoint
+
+| 項目         | 結果                               |
+| ------------ | ---------------------------------- |
+| typecheck    | ✅ pass                            |
+| lint         | ✅ pass                            |
+| test         | ✅ 408/408 (63 files)              |
+| format:check | ✅ pass                            |
+| 需求覆蓋     | ✅ 17/17 MVP requirements verified |
+| **MVP 完成** | ✅ **Phase 0+1 全部交付**          |
 
 ### 待辦
 
-- **Task 19**：最終 Checkpoint — 確認所有 MVP 測試通過
 - **Phase 2/3 Backlog**：B1 Trials Runner、B2 成長頁面、B3 GenePack 交換
 
 ---
@@ -540,3 +550,4 @@ packages/hub/src/e2e/
 | 2026-03-02 | OpenClaw Spec 深度審計；requirements.md/design.md/tasks.md 共 9 項 misalignment 修正                                                                         | Claude_20260302_1900 |
 | 2026-03-02 | Task 16.1 Docker Compose + 16.2 ChannelPlugin + 16.3 Integration Smoke + Task 17 Checkpoint；386/386 tests；§13.1 模組架構擴充                               | Claude_20260302_2100 |
 | 2026-03-03 | Task 18 E2E 整合測試完成（18.1-18.5，5 測試檔 17 tests）；408/408 tests；新增 §15 E2E Patterns；§10/§7 全面更新；§15→§16 重編號                              | Claude_20260303_0600 |
+| 2026-03-03 | **Task 19 最終 Checkpoint — MVP COMPLETE**；408/408 tests；17/17 MVP requirements verified；§10 Task 19 結果表；MASTER_SPEC 對齊完畢                         | Claude_20260303_0800 |
