@@ -4,18 +4,29 @@ import styles from "./PairingCard.module.css";
 
 interface PairingCardProps {
   pairing: Pairing;
+  counterpartName?: string;
   onApprove?: (id: string) => void;
   onRevoke?: (id: string) => void;
+  onCancel?: (id: string) => void;
   disabled?: boolean;
 }
 
-export function PairingCard({ pairing, onApprove, onRevoke, disabled }: PairingCardProps) {
+export function PairingCard({
+  pairing,
+  counterpartName,
+  onApprove,
+  onRevoke,
+  onCancel,
+  disabled,
+}: PairingCardProps) {
   const statusClass = styles[pairing.status] ?? "";
+  const displayA = counterpartName ?? pairing.agentAId;
+  const displayB = counterpartName ? "YOU" : pairing.agentBId;
   return (
     <div
       className={`${styles.card} ${statusClass}`}
       role="listitem"
-      aria-label={`Pairing ${pairing.agentAId.slice(0, 8)} and ${pairing.agentBId.slice(0, 8)}, status ${pairing.status}`}
+      aria-label={`Pairing with ${counterpartName ?? pairing.agentAId}, status ${pairing.status}`}
     >
       <div className={styles.header}>
         <span className={styles.status}>
@@ -26,21 +37,29 @@ export function PairingCard({ pairing, onApprove, onRevoke, disabled }: PairingC
       </div>
       <div className={styles.agents}>
         <span className={styles.agentId} title={pairing.agentAId}>
-          {pairing.agentAId}
+          {displayA}
         </span>
         <span className={styles.arrow}>{"<-->"}</span>
         <span className={styles.agentId} title={pairing.agentBId}>
-          {pairing.agentBId}
+          {displayB}
         </span>
       </div>
       <div className={styles.date}>{new Date(pairing.createdAt).toISOString().slice(0, 10)}</div>
       <div className={styles.actions}>
-        {pairing.status === "pending" && onApprove && (
+        {onApprove && (
           <RetroButton label="ACCEPT" onClick={() => onApprove(pairing.id)} disabled={disabled} />
         )}
-        {(pairing.status === "pending" || pairing.status === "active") && onRevoke && (
+        {onCancel && (
           <RetroButton
-            label={pairing.status === "pending" ? "REJECT" : "REVOKE"}
+            label="CANCEL"
+            variant="ghost"
+            onClick={() => onCancel(pairing.id)}
+            disabled={disabled}
+          />
+        )}
+        {onRevoke && (
+          <RetroButton
+            label="REVOKE"
             variant="danger"
             onClick={() => onRevoke(pairing.id)}
             disabled={disabled}

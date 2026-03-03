@@ -55,10 +55,30 @@ export const api = {
       body: JSON.stringify({ agentAId, agentBId }),
     }),
 
-  updatePairing: (id: string, action: "approve" | "revoke") =>
+  requestPairing: (targetAgentId: string) =>
+    apiFetch<{ pairing: import("./types").Pairing }>("/api/pairings", {
+      method: "POST",
+      body: JSON.stringify({ targetAgentId }),
+    }),
+
+  updatePairing: (id: string, action: "approve" | "revoke" | "cancel") =>
     apiFetch<{ pairing: import("./types").Pairing }>(`/api/pairings/${id}`, {
       method: "PATCH",
       body: JSON.stringify({ action }),
+    }),
+
+  getNonce: () => apiFetch<{ nonce: string }>("/api/auth/nonce"),
+
+  bootstrap: (params: {
+    pubkey: string;
+    signature: string;
+    nonce: string;
+    display_name?: string;
+    persona_tags?: string[];
+  }) =>
+    apiFetch<import("./types").BootstrapResponse>("/api/auth/bootstrap", {
+      method: "POST",
+      body: JSON.stringify(params),
     }),
 };
 

@@ -60,6 +60,15 @@
   font-size: 14px;
   color: var(--text-primary-light);
 }
+.demoBadge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent-yellow);
+  border: 1px solid var(--accent-yellow);
+  padding: 1px 4px;
+  display: inline-block;
+  margin-top: 4px;
+}
 .tags {
   display: flex;
   flex-wrap: wrap;

@@ -9,6 +9,8 @@ export interface HubConfig {
   MSG_RELAY_TTL_DAYS: number;
   /** Shared secret for Web UI admin login (POST /api/auth/token). */
   HUB_ADMIN_SECRET: string;
+  /** Seed demo agents on startup when true. Default: false */
+  SEED_DEMO: boolean;
 }
 
 function requireInt(
@@ -51,5 +53,6 @@ export function parseEnv(env: Record<string, string | undefined> = process.env):
     RATE_LIMIT_MAX: requireInt(env.RATE_LIMIT_MAX, "RATE_LIMIT_MAX", 100, 1),
     MSG_RELAY_TTL_DAYS: requireInt(env.MSG_RELAY_TTL_DAYS, "MSG_RELAY_TTL_DAYS", 0, 0),
     HUB_ADMIN_SECRET: parseAdminSecret(env.HUB_ADMIN_SECRET),
+    SEED_DEMO: (env.SEED_DEMO ?? "").toLowerCase() === "true",
   };
 }

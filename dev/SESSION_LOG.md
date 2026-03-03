@@ -1,5 +1,106 @@
 # Session Log
 
+## 2026-03-03 Session 46 — Task 20: Browser Self-Bootstrap PoP Auth (Claude)
+
+1. Agent & Session ID: Claude_20260303_1030
+2. Summary: 實作完整 Browser Self-Bootstrap (PoP Auth)，32 new tests (408→440)。使用者打開瀏覽器即可自助建立 agent，無需 admin secret 或 OpenClaw Plugin。
+3. What was done:
+   - **Backend (Batch 1)**:
+     - `auth-constants.ts`: 集中管理安全常數 (NONCE_TTL_MS, NONCE_RATE_LIMIT, BOOTSTRAP_RATE_LIMIT, JWT expiry, NONCE_PREFIX)
+     - `nonce-store.ts`: NonceStore class (Map-based, per-entry setTimeout TTL auto-cleanup, timer.unref())
+     - `routes/auth.ts`: 重構為 `authRoutes` — 保留 POST /api/auth/token (admin) + 新增 GET /api/auth/nonce + POST /api/auth/bootstrap
+     - `plugins/auth.ts`: 加入 `request.identity` decoration (AdminIdentity | AgentIdentity), legacy JWT fallback to admin
+     - `app.ts`: instantiate NonceStore, decorate, onClose destroy
+     - 6 NonceStore tests + 14 auth route tests + 6 identity tests
+   - **Frontend (Batch 2)**:
+     - `packages/web/src/lib/crypto.ts`: Ed25519 keypair gen/load/clear via @noble/curves, signNonce, isJwtExpired
+     - `api-client.ts`: +getNonce() + bootstrap()
+     - `types.ts`: +BootstrapResponse interface
+     - `auth-context.tsx`: 全面重構 — keypair state, bootstrapAgent, reAuth (silent), mount auto-re-auth, loading state
+     - `login/page.tsx`: 3-state login (registration / re-auth / session active), collapsible admin section
+     - `NavBar.tsx`: show truncated agentId when authenticated
+     - 6 crypto tests
+   - **Integration (Batch 3)**:
+     - 3 integration tests: full flow (bootstrap→agentdex visible), admin+agent coexist, returning agent same ID
+     - tasks.md 20.1-20.5 marked [x]
+4. Key decisions:
+   - NonceStore uses in-memory Map (not DB) — sufficient for single-server Phase 0
+   - `authRoutes` renamed from `authTokenRoute` with backward compat alias
+   - Legacy JWT `{ pubkey: "web-user" }` classified as admin (no breaking change for existing tests)
+   - Nonce TTL expiry test uses manual `consume()` instead of `vi.useFakeTimers()` (Fastify internal timers conflict with fake timers)
+5. Verification: typecheck ✅ lint ✅ test 440/440 ✅ format:check ✅
+6. Files changed:
+   - New: `packages/hub/src/server/auth-constants.ts`, `nonce-store.ts`, `nonce-store.test.ts`, `packages/web/src/lib/crypto.ts`, `crypto.test.ts`
+   - Modified: `app.ts`, `routes/auth.ts`, `routes/auth.test.ts`, `plugins/auth.ts`, `plugins/auth.test.ts`, `api-client.ts`, `types.ts`, `auth-context.tsx`, `login/page.tsx`, `login.module.css`, `NavBar.tsx`, `NavBar.module.css`, `packages/web/package.json`, `tasks.md`
+7. Next: Task 23 (Seed/Demo Mode) → Task 21 (Web Pairing UX) → Task 22 (Web Chat E2E)
+
+---
+
+## 2026-03-03 Session 45 — ChatGPT 討論分析 + Task 20 細化 (Claude)
+
+1. Agent & Session ID: Claude_20260303_1000
+2. Summary: 綜合 ChatGPT 討論（Moltbook 雙軌身份、安全加固建議）與 2 個 Explore subagent 結果（DB schema 就緒狀態、Chat UX 設計確認），細化 Task 20 sub-tasks。
+3. What was done:
+   - **Subagent 研究結果綜合**：
+     - DB: `owners` 表已存在（id, handle, pubkey）；`agents.ownerId` FK nullable；JWT 目前 admin-only → 需擴充
+     - Chat UX: wireframe §4 terminal-style 確認；msg.relay 需 3 欄位；Panel/RetroButton/AgentCard 可重用
+   - **ChatGPT 討論對齊評估**：
+     - Phase 0 PoP Bootstrap: ✅ 完全適合（Task 20 已涵蓋）
+     - Phase 1 Owner/Email: ❌ 延後（超出 Phase 1.5 範圍，DB 已預留）
+     - Moltbook 雙軌身份: ⚠️ agent-first 已是我們架構，owner claim 延後
+     - 安全加固: ✅ 必要（nonce TTL 5min + 一次性使用、bootstrap 限速 5/min/IP）
+   - **tasks.md Task 20 細化**：
+     - 新增 DB 就緒狀態說明 + 身份架構決策記錄
+     - 20.1: 增加 nonce TTL 5min + 一次性使用 + 限速 10/min/IP
+     - 20.2: 增加 nonce 過期驗證 + returning user flow + 限速 5/min/IP + JWT exp=24h
+     - 20.3: 增加 localStorage 格式 + 回訪自動 re-auth + 登出僅清 JWT
+     - 新增 20.4: JWT auth 層重構（同時支援 admin + agent scope）
+     - 新增 20.5: 細化測試項目（unit + integration）
+4. Why: 確保 Phase 1.5 開發計畫融合外部研究（Moltbook 教訓、安全最佳實踐）且與既有架構（DB schema）對齊
+5. Verification: 治理文件一致性確認（tasks.md / SESSION_HANDOFF / SESSION_LOG 同步）
+6. Next-step recommendations: 進入 Plan Mode 寫 Task 20 詳細實作計劃
+7. Key decisions:
+   - Agent-first 身份模式確認（browser keypair = agent identity）
+   - Owner model 延後至 Phase 2+（DB 已預留 owners 表）
+   - Bootstrap 安全加固：nonce TTL 5min + 一次性 + per-IP rate limit
+   - JWT 需同時支援 admin scope 與 agent scope（向後相容）
+
+---
+
+## 2026-03-03 Session 44 — Phase 1.5 Web-First Usability 提案審核 + 治理記錄 (Claude)
+
+1. Agent & Session ID: Claude_20260303_0900
+2. Summary: 審核「Web-First Usability Fix」提案，確認適切性，記錄為 Phase 1.5 (Task 20-24) 新任務集。
+3. What was done:
+   - **提案分析**：
+     - 問題陳述正確——MVP 後端/協議/測試完備但使用者無法冷啟動（Web UI 依賴 OpenClaw Plugin）
+     - D1 (Browser Self-Bootstrap): Proof-of-Possession + Ed25519 簽名方案合理，@noble/curves 為 pure JS 可在瀏覽器執行
+     - D2 (Web Pairing UX): REST endpoints 已存在（POST/PATCH /api/pairings），僅需 UI glue
+     - D3 (Web Chat E2E): 需重構 `e2e.ts` 的 libsodium import（createRequire 為 Node-only）+ 新建瀏覽器 WS client
+     - D4 (Seed/Demo): 低複雜度高視覺回報
+   - **技術驗證**（Explore agent 深度掃描）：
+     - `signing.ts`: @noble/curves + @noble/hashes → browser-safe ✅
+     - `e2e.ts`: libsodium-wrappers 的 createRequire() → browser ❌，需雙路徑 import 或替換
+     - `tweetnacl` 方案不可行（只有 XSalsa20，非 XChaCha20）→ 應用 libsodium.js browser build
+     - REST API surface (auth, agents, pairings) → browser-safe ✅
+     - WS auth (challenge-response) → browser 可行但需適配
+   - **治理更新**：
+     - tasks.md: 新增 Phase 1.5 section（Task 20-24，含 sub-tasks）
+     - SESSION_HANDOFF: Open Priorities 更新至 Phase 1.5
+     - SESSION_LOG: 本記錄
+4. Why: MVP 完成但無實際可用性，需 Web-First 自助流程打通冷啟動路徑
+5. Verification: 治理文件一致性確認（tasks.md / SESSION_HANDOFF / SESSION_LOG 同步）
+6. Next-step recommendations:
+   - 寫 Task 20 實作計劃（EnterPlanMode）
+   - 優先 D1 + D4（browser bootstrap + seed data），令 AgentDex 立即可用
+   - D3 (Chat) 最後做（複雜度最高：e2e.ts 重構 + browser WS + Chat UI）
+7. Key decisions:
+   - Phase 1.5 定位：介於 MVP 與 Phase 2 之間，專注「瀏覽器自助啟動」
+   - 安全不變式：private key 不離開瀏覽器、server 不存 private key、E2E wire format 不變
+   - libsodium 策略：重構 e2e.ts 支援瀏覽器（非替換為 tweetnacl）
+
+---
+
 ## 2026-03-03 Session 43 — Task 19 Final Checkpoint: MVP COMPLETE (Claude)
 
 1. Agent & Session ID: Claude_20260303_0800

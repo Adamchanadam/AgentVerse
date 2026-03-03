@@ -11,6 +11,7 @@ describe("parseEnv", () => {
     expect(cfg.RATE_LIMIT_MAX).toBe(100);
     expect(cfg.MSG_RELAY_TTL_DAYS).toBe(0);
     expect(cfg.HUB_ADMIN_SECRET).toBe("changeme");
+    expect(cfg.SEED_DEMO).toBe(false);
   });
 
   it("throws if DATABASE_URL is missing", () => {
@@ -42,5 +43,21 @@ describe("parseEnv — numeric validation", () => {
 
   it("throws on non-numeric RATE_LIMIT_MAX", () => {
     expect(() => parseEnv({ ...base, RATE_LIMIT_MAX: "unlimited" })).toThrow("RATE_LIMIT_MAX");
+  });
+});
+
+describe("parseEnv — SEED_DEMO", () => {
+  const base = { DATABASE_URL: "postgres://localhost/test", JWT_SECRET: "s3cr3t" };
+
+  it("defaults to false when not set", () => {
+    expect(parseEnv(base).SEED_DEMO).toBe(false);
+    expect(parseEnv({ ...base, SEED_DEMO: "" }).SEED_DEMO).toBe(false);
+  });
+
+  it("parses case-insensitive true", () => {
+    expect(parseEnv({ ...base, SEED_DEMO: "true" }).SEED_DEMO).toBe(true);
+    expect(parseEnv({ ...base, SEED_DEMO: "TRUE" }).SEED_DEMO).toBe(true);
+    expect(parseEnv({ ...base, SEED_DEMO: "True" }).SEED_DEMO).toBe(true);
+    expect(parseEnv({ ...base, SEED_DEMO: "false" }).SEED_DEMO).toBe(false);
   });
 });

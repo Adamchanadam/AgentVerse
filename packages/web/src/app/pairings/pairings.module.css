@@ -18,12 +18,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: calc(var(--spacing-base) * 2);
-}
-.empty {
-  font-family: var(--font-mono);
-  color: var(--text-dimmed);
-  font-size: 13px;
-  grid-column: 1 / -1;
+  margin-bottom: calc(var(--spacing-base) * 2);
 }
 .center {
   display: flex;
@@ -31,32 +26,27 @@
   align-items: center;
   min-height: calc(100vh - 48px);
 }
-/* Dialog form */
-.dialogForm {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-base);
-  margin-bottom: calc(var(--spacing-base) * 2);
-}
-.dialogLabel {
-  font-family: var(--font-mono);
-  color: var(--accent-cyan);
-  font-size: 12px;
-}
-.dialogInput {
+/* Section titles */
+.sectionTitle {
   font-family: var(--font-mono);
   font-size: 14px;
-  padding: var(--spacing-base);
-  background: var(--bg-pitch-black);
-  color: var(--text-primary-light);
-  border: var(--border-thin) solid var(--border-white);
-  outline: none;
+  padding: var(--spacing-base) calc(var(--spacing-base) * 2);
+  border-bottom: 1px solid var(--border-white);
+  margin-bottom: var(--spacing-base);
 }
-.dialogInput:focus {
-  border-color: var(--accent-cyan);
+.incomingTitle {
+  color: var(--accent-yellow);
 }
-.dialogActions {
-  display: flex;
-  gap: var(--spacing-base);
-  margin-top: var(--spacing-base);
+.outgoingTitle {
+  color: var(--accent-cyan);
+}
+.activeTitle {
+  color: var(--accent-green);
+}
+.emptySection {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dimmed);
+  padding: var(--spacing-base) calc(var(--spacing-base) * 2);
+  margin-bottom: calc(var(--spacing-base) * 2);
 }

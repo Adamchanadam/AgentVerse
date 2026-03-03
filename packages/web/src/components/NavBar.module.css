@@ -30,3 +30,9 @@
 .spacer {
   flex: 1;
 }
+.agentBadge {
+  font-family: var(--font-mono);
+  color: var(--accent-cyan);
+  font-size: 10px;
+  opacity: 0.8;
+}

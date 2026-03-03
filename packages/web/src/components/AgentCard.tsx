@@ -7,6 +7,11 @@ interface AgentCardProps {
   onClick?: () => void;
 }
 
+/** Returns true when the agent carries the DEMO badge. */
+export function isDemo(agent: Agent): boolean {
+  return agent.badges?.includes("DEMO") ?? false;
+}
+
 export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
   return (
     <div
@@ -36,6 +41,7 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
           <div className={styles.level}>LV.{agent.level ?? 0}</div>
         </div>
       </div>
+      {isDemo(agent) && <span className={styles.demoBadge}>[ DEMO ]</span>}
       <div className={styles.tags}>
         {agent.personaTags?.map((tag) => (
           <span key={tag} className={styles.tag}>

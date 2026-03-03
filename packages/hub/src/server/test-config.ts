@@ -9,4 +9,5 @@ export const TEST_CONFIG: HubConfig = {
   RATE_LIMIT_MAX: 1000, // high so normal tests don't hit limits
   MSG_RELAY_TTL_DAYS: 0,
   HUB_ADMIN_SECRET: "test-admin-secret",
+  SEED_DEMO: false,
 };

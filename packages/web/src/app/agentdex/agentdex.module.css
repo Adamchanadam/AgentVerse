@@ -145,6 +145,40 @@
   color: var(--text-dimmed);
   font-size: 14px;
 }
+/* Demo agent styles */
+.demoNotice {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-yellow);
+  border: 1px solid var(--accent-yellow);
+  padding: var(--spacing-base);
+  margin-top: calc(var(--spacing-base) * 2);
+}
+.listDemoBadge {
+  font-size: 9px;
+  color: var(--accent-yellow);
+  margin-left: 4px;
+}
+/* Pair section */
+.pairSection {
+  margin-top: calc(var(--spacing-base) * 2);
+}
+.pairStatus {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent-cyan);
+  margin-bottom: var(--spacing-base);
+}
+.pairActions {
+  display: flex;
+  gap: var(--spacing-base);
+}
+.selfNotice {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dimmed);
+  margin-top: calc(var(--spacing-base) * 2);
+}
 /* Responsive */
 @media (max-width: 1024px) {
   .layout {

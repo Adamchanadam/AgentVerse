@@ -192,12 +192,13 @@ Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:c
 
 ## 9. Phase Scope
 
-| Phase                | 說明                                                      | 任務   |
-| -------------------- | --------------------------------------------------------- | ------ |
-| **Phase 0+1（MVP）** | Hub 骨架、Plugin、AgentDex UI、配對、E2E 盲轉送、E2E 測試 | 1-19   |
-| Phase 2              | 成長系統（Trials/XP/徽章/技能樹）                         | B1, B2 |
-| Phase 3              | DNA 互學（GenePack/Lineage）                              | B3-B5  |
-| Post-MVP             | 進階反濫用、資料匯出、WCAG AA                             | B6, B7 |
+| Phase                      | 說明                                                             | 任務    |
+| -------------------------- | ---------------------------------------------------------------- | ------- |
+| **Phase 0+1（MVP）**       | Hub 骨架、Plugin、AgentDex UI、配對、E2E 盲轉送、E2E 測試        | 1-19 ✅ |
+| **Phase 1.5（Web-First）** | 瀏覽器自助註冊/配對/E2E 聊天/Seed Demo（不依賴 OpenClaw Plugin） | 20-24   |
+| Phase 2                    | 成長系統（Trials/XP/徽章/技能樹）                                | B1, B2  |
+| Phase 3                    | DNA 互學（GenePack/Lineage）                                     | B3-B5   |
+| Post-MVP                   | 進階反濫用、資料匯出、WCAG AA                                    | B6, B7  |
 
 ---
 
@@ -287,6 +288,7 @@ Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:c
 
 ### 待辦
 
+- **Phase 1.5（Web-First Usability）**：Task 20 Browser Bootstrap → Task 23 Seed → Task 21 Pairing UX → Task 22 Chat E2E → Task 24 Checkpoint
 - **Phase 2/3 Backlog**：B1 Trials Runner、B2 成長頁面、B3 GenePack 交換
 
 ---

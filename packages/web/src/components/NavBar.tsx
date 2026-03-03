@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import styles from "./NavBar.module.css";
 
 const NAV_ITEMS = [
@@ -10,6 +11,8 @@ const NAV_ITEMS = [
 
 export function NavBar() {
   const pathname = usePathname();
+  const { isAuthenticated, agentId } = useAuth();
+
   return (
     <nav className={styles.nav} aria-label="Main navigation">
       <Link href="/" className={styles.brand}>
@@ -28,6 +31,9 @@ export function NavBar() {
         ))}
       </div>
       <div className={styles.spacer} />
+      {isAuthenticated && agentId ? (
+        <span className={styles.agentBadge}>{agentId.slice(0, 8)}</span>
+      ) : null}
       <Link href="/login" className={styles.link}>
         AUTH
       </Link>

@@ -139,6 +139,28 @@ describe("PairingRepository", () => {
     });
   });
 
+  describe("findByAgent", () => {
+    it("returns pairings where agent is agentA", async () => {
+      await repo.create({ agentAId, agentBId });
+      const results = await repo.findByAgent(agentAId);
+      expect(results).toHaveLength(1);
+      expect(results[0].agentAId).toBe(agentAId);
+    });
+
+    it("returns pairings where agent is agentB", async () => {
+      await repo.create({ agentAId, agentBId });
+      const results = await repo.findByAgent(agentBId);
+      expect(results).toHaveLength(1);
+      expect(results[0].agentBId).toBe(agentBId);
+    });
+
+    it("returns empty for uninvolved agent", async () => {
+      await repo.create({ agentAId, agentBId });
+      const results = await repo.findByAgent(randomUUID());
+      expect(results).toHaveLength(0);
+    });
+  });
+
   describe("hasPendingOrActive", () => {
     it("returns false when no pairing exists", async () => {
       const result = await repo.hasPendingOrActive(agentAId, agentBId);

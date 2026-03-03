@@ -56,6 +56,14 @@ export class PairingRepository {
     return row ?? null;
   }
 
+  /** Find all pairings where the given agent is either side. */
+  async findByAgent(agentId: string): Promise<Pairing[]> {
+    return this.db
+      .select()
+      .from(pairings)
+      .where(or(eq(pairings.agentAId, agentId), eq(pairings.agentBId, agentId)));
+  }
+
   /**
    * Check if a pending or active pairing already exists between two agents.
    * Used to reject duplicate pair.requested events.

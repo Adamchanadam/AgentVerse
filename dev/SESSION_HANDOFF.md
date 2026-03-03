@@ -14,7 +14,7 @@
 
 1. Product / System Layer: AgentVerse Hub + OpenClaw Channel Plugin `agentverse` + Local Trials Runner
 2. Development Governance Layer: AGENTS.md 治理框架 + Kiro spec-driven workflow
-3. Current task belongs to which layer: Product（MVP Phase 0+1 全部完成 — Task 1-19 done, 408/408 tests）
+3. Current task belongs to which layer: Product（Phase 1.5 Web-First Usability — Task 20 done, Task 21-24 pending；440/440 tests）
 4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格已對齊 v2026.3.1 官方 codebase（Session 38 修正 9 項 misalignment + Session 39 深度審計修正 7 項）；持續監控後續版本變化
 
 ## Mandatory Start Checklist
@@ -34,7 +34,12 @@
 
 ## Open Priorities
 
-1. **MVP 完成** ✅ — Task 1-19 全部通過，Phase 0+1 交付
+1. **Phase 1.5：Web-First Usability**（Task 20-24）— 令使用者打開瀏覽器就能用
+   - Task 20：Browser Self-Bootstrap ✅（440 tests）
+   - Task 21：Web Pairing UX Glue（最優先）
+   - Task 22：Web Chat with E2E Encryption
+   - Task 23：Seed / Demo Mode
+   - Task 24：Phase 1.5 Checkpoint
 2. Phase 2 Backlog：B1 Trials Runner、B2 成長頁面
 3. Phase 3 Backlog：B3 GenePack 交換、B4 Lineage、B5 Fusion Lab
 
@@ -49,7 +54,7 @@
 
 1. Required checks: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check`
 2. Current failing checks (if any): 無
-3. Test count: 408（63 files）
+3. Test count: 440（65 files）
 4. Release / merge blocking conditions: N/A
 
 ## Antigravity（UI/UX Design Agent）交接狀態
@@ -131,21 +136,34 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 ## Last Session Record
 
 1. UTC date: 2026-03-03
-2. Session ID: Claude_20260303_0800
+2. Session ID: Claude_20260303_1030
 3. Completed:
-   - **PROJECT_MASTER_SPEC.md 對齊**：§13.1 plugin modules、§15 E2E patterns、§16 Change History
-   - **Task 19: 最終 Checkpoint — MVP COMPLETE** ✅
-     - typecheck ✅ lint ✅ test 408/408 ✅ format:check ✅
-     - 需求覆蓋審計：17/17 MVP requirements (1-12, 21-23, 25-26) 全部有對應任務與測試
-     - tasks.md Task 19 標記 [x]
+   - **Task 20: Browser Self-Bootstrap (PoP Auth) ✅** — 32 new tests (408→440)
+     - PT1: `auth-constants.ts` + `nonce-store.ts` + 6 tests
+     - PT2: `GET /api/auth/nonce` + `POST /api/auth/bootstrap` routes + 14 new tests in auth.test.ts
+     - PT3: Auth plugin refactored with `request.identity` (AdminIdentity | AgentIdentity) + 6 new identity tests
+     - PT4: `packages/web/src/lib/crypto.ts` (Ed25519 keypair gen/load, signNonce, isJwtExpired) + 6 tests
+     - PT5: api-client + BootstrapResponse type + auth-context (keypair state, bootstrapAgent, reAuth, silent mount re-auth)
+     - PT6: Login page 3-state redesign (registration / re-auth / session active), admin section collapsible, NavBar agent badge
+     - PT7: 3 integration tests (full flow, coexist, returning) + full regression + docs
+   - **Previously (Claude_20260303_1000)**: ChatGPT 討論分析 + Task 20 Plan
+   - **Previously (Claude_20260303_0900)**: Phase 1.5 提案審核 + 治理記錄
+   - **Previously (Claude_20260303_0800)**: Task 19 MVP COMPLETE ✅ (408/408 tests)
 4. Pending:
-   - Phase 2/3 Backlog（B1-B7）
+   - Task 21：Web Pairing UX Glue（最優先）
+   - Task 22：Web Chat with E2E Encryption
+   - Task 23：Seed / Demo Mode
+   - Task 24：Phase 1.5 Checkpoint
 5. Next priorities (max 3):
-   - Phase 2：B1 Trials Runner、B2 成長頁面
-   - Phase 3：B3 GenePack 交換
-   - 可選：TTL-mode catchup offline_messages JOIN
-6. Risks / blockers: TTL-mode catchup 未 JOIN offline_messages（啟用前需完成）；6 optional PBTs deferred（P12/P13/P23 + 1.5/3.4/3.5）
-7. Validation: typecheck ✅ lint ✅ test 408/408 ✅ format:check ✅
+   - Task 23 Seed/Demo Mode（可快速完成，減少空白畫面問題）
+   - Task 21 Web Pairing UX Glue
+   - Task 22 Web Chat with E2E Encryption
+6. Risks / blockers:
+   - `libsodium-wrappers` 的 `createRequire()` 在瀏覽器不可用，Task 22.1 需重構 e2e.ts 雙路徑 import
+   - Web Chat (Task 22) 需瀏覽器端 WebSocket client + 既有 challenge-response auth 適配
+   - TTL-mode catchup 未 JOIN offline_messages（不影響 Phase 1.5，但 TTL 啟用前需完成）
+   - Agent scope 尚未強制權限隔離（admin + agent 都可訪問所有 API，延後至 Phase 2+）
+7. Validation: typecheck ✅ lint ✅ test 440/440 ✅ format:check ✅
 
 ### Previous Session Reference（Claude_20260302_2000）
 
