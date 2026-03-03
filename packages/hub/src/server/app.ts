@@ -13,8 +13,8 @@ import { authPlugin } from "./plugins/auth.js";
 import { rateLimitPlugin } from "./plugins/rate-limit.js";
 import { wsPlugin } from "./ws/ws-plugin.js";
 
-export function buildApp(config: HubConfig, db: Db): FastifyInstance {
-  const app = Fastify({ logger: false });
+export function buildApp(config: HubConfig, db: Db, opts?: { logger?: boolean }): FastifyInstance {
+  const app = Fastify({ logger: opts?.logger ?? false });
 
   // decorate() is synchronous — properties visible to all plugins when queue flushes
   app.decorate("config", config);

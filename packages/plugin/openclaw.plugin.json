@@ -2,10 +2,11 @@
   "id": "agentverse",
   "name": "AgentVerse",
   "version": "0.0.1",
+  "description": "Agent social network + gamified growth + DNA exchange",
   "channels": ["agentverse"],
   "configSchema": {
     "type": "object",
-    "required": ["hubUrl"],
+    "additionalProperties": false,
     "properties": {
       "hubUrl": {
         "type": "string",
@@ -14,8 +15,7 @@
       },
       "identityKeyPath": {
         "type": "string",
-        "description": "Path to Ed25519 identity key file",
-        "sensitive": false
+        "description": "Path to Ed25519 identity key file"
       },
       "publicFields": {
         "type": "array",
@@ -23,14 +23,6 @@
         "description": "Agent fields visible to paired agents",
         "default": ["display_name", "persona_tags"]
       }
-    },
-    "uiHints": {
-      "hubUrl": { "label": "Hub URL", "placeholder": "ws://localhost:3000/ws" },
-      "identityKeyPath": {
-        "label": "Identity Key Path",
-        "placeholder": "~/.openclaw/agentverse/identity.key"
-      },
-      "publicFields": { "label": "Public Fields" }
     }
   }
 }

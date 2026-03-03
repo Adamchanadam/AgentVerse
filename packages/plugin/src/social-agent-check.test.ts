@@ -8,23 +8,32 @@ describe("checkSocialAgentConfig", () => {
     expect(result.message).toContain("No social agent found");
   });
 
-  it("returns 'missing' when agents exist but no social", () => {
+  it("returns 'missing' when agents.list exists but no social", () => {
     const result = checkSocialAgentConfig({
-      agents: [{ id: "other" }],
+      agents: { list: [{ id: "other" }] },
     });
     expect(result.status).toBe("missing");
   });
 
-  it("returns 'ok' when social agent has all required deny items", () => {
+  it("returns 'missing' when agents exists but list is empty", () => {
     const result = checkSocialAgentConfig({
-      agents: [
-        {
-          id: "social",
-          tools: {
-            deny: ["file_write", "shell_exec", "network_outbound"],
+      agents: { list: [] },
+    });
+    expect(result.status).toBe("missing");
+  });
+
+  it("returns 'ok' when social agent has all required deny groups", () => {
+    const result = checkSocialAgentConfig({
+      agents: {
+        list: [
+          {
+            id: "social",
+            tools: {
+              deny: ["group:runtime", "group:fs", "group:web", "group:ui", "group:automation"],
+            },
           },
-        },
-      ],
+        ],
+      },
     });
     expect(result.status).toBe("ok");
     expect(result.message).toBe("Social agent configuration is valid");
@@ -32,49 +41,67 @@ describe("checkSocialAgentConfig", () => {
 
   it("returns 'ok' when social agent has extra deny items beyond required", () => {
     const result = checkSocialAgentConfig({
-      agents: [
-        {
-          id: "social",
-          tools: {
-            deny: ["file_write", "shell_exec", "network_outbound", "extra_thing"],
+      agents: {
+        list: [
+          {
+            id: "social",
+            tools: {
+              deny: [
+                "group:runtime",
+                "group:fs",
+                "group:web",
+                "group:ui",
+                "group:automation",
+                "group:sessions",
+              ],
+            },
           },
-        },
-      ],
+        ],
+      },
     });
     expect(result.status).toBe("ok");
   });
 
-  it("returns 'incomplete' when social agent is missing some deny items", () => {
+  it("returns 'incomplete' when social agent is missing some deny groups", () => {
     const result = checkSocialAgentConfig({
-      agents: [
-        {
-          id: "social",
-          tools: { deny: ["file_write"] },
-        },
-      ],
+      agents: {
+        list: [
+          {
+            id: "social",
+            tools: { deny: ["group:runtime"] },
+          },
+        ],
+      },
     });
     expect(result.status).toBe("incomplete");
-    expect(result.message).toContain("shell_exec");
-    expect(result.message).toContain("network_outbound");
+    expect(result.message).toContain("group:fs");
+    expect(result.message).toContain("group:web");
+    expect(result.message).toContain("group:ui");
+    expect(result.message).toContain("group:automation");
   });
 
   it("returns 'incomplete' when social agent has no tools.deny", () => {
     const result = checkSocialAgentConfig({
-      agents: [{ id: "social" }],
+      agents: { list: [{ id: "social" }] },
     });
     expect(result.status).toBe("incomplete");
-    expect(result.message).toContain("file_write");
-    expect(result.message).toContain("shell_exec");
-    expect(result.message).toContain("network_outbound");
+    expect(result.message).toContain("group:runtime");
+    expect(result.message).toContain("group:fs");
+    expect(result.message).toContain("group:web");
   });
 });
 
 describe("printSuggestedConfig", () => {
-  it("returns a valid JSON-like config snippet", () => {
+  it("returns config snippet with correct structure and group names", () => {
     const output = printSuggestedConfig();
     expect(output).toContain('"social"');
-    expect(output).toContain("file_write");
-    expect(output).toContain("shell_exec");
-    expect(output).toContain("network_outbound");
+    expect(output).toContain("group:runtime");
+    expect(output).toContain("group:fs");
+    expect(output).toContain("group:web");
+    expect(output).toContain("group:ui");
+    expect(output).toContain("group:automation");
+    expect(output).toContain("agents");
+    expect(output).toContain("list");
+    expect(output).toContain("bindings");
   });
 });

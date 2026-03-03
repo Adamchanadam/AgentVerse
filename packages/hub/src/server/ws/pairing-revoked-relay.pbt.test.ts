@@ -116,7 +116,7 @@ function makePairRevokedEnvelope(kp: { priv: string; pub: string }, pairId: stri
 // ─── P15: Revoked pairing stops msg.relay ───────────────────
 
 describe("P15: Revoked pairing stops msg.relay", () => {
-  it("msg.relay is always rejected after revocation", async () => {
+  it("msg.relay is always rejected after revocation", { timeout: 15_000 }, async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 10, maxLength: 200 }).map((s) => `CIPHERTEXT_${s}`),

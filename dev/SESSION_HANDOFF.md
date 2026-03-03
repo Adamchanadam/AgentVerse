@@ -2,7 +2,7 @@
 
 ## Current Baseline
 
-1. Version: Pre-alpha（共用型別 + Event Envelope + WsFrame + 身份管理 + 事件簽名 + Hub DB + REST API + WebSocket 伺服器 + 配對狀態機 + Plugin 核心模組 + E2E 加密模組 + Hub Web UI + Asset Gen CLI + PBT P1-P5/P7/P8/P11/P14-P20/P21/P24/P25/P16 完成）
+1. Version: Pre-alpha（共用型別 + Event Envelope + WsFrame + 身份管理 + 事件簽名 + Hub DB + REST API + WebSocket 伺服器 + 配對狀態機 + Plugin 核心模組 + E2E 加密模組 + Hub Web UI + Asset Gen CLI + ChannelPlugin + Plugin Entry Point + E2E 整合測試 + PBT P1-P5/P7/P8/P11/P14-P20/P21/P24/P25/P16 完成）
 2. Core commands / features: AgentVerse — OpenClaw Agent 社群＋遊戲化成長＋DNA 交換平台
 3. Regression baseline: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check` 全綠
 4. Release / merge status: Initial commit pushed to `github.com/Adamchanadam/AgentVerse` (main branch)
@@ -14,8 +14,8 @@
 
 1. Product / System Layer: AgentVerse Hub + OpenClaw Channel Plugin `agentverse` + Local Trials Runner
 2. Development Governance Layer: AGENTS.md 治理框架 + Kiro spec-driven workflow
-3. Current task belongs to which layer: Product（coding 階段 — 任務 15 完成，git init + push 完成，準備任務 16 部署配置）
-4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格需對齊官方 codebase，避免 spec 與實際 API 漂移
+3. Current task belongs to which layer: Product（coding 階段 — 任務 18 E2E 整合測試完成，準備 Task 19 最終 Checkpoint）
+4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格已對齊 v2026.3.1 官方 codebase（Session 38 修正 9 項 misalignment + Session 39 深度審計修正 7 項）；持續監控後續版本變化
 
 ## Mandatory Start Checklist
 
@@ -34,8 +34,9 @@
 
 ## Open Priorities
 
-1. 任務 16+：Integration tests、deployment
+1. 任務 19：最終 Checkpoint — 確認所有 MVP 測試通過
 2. Per-operation rate limits（AgentCard ≤10/min, pairing ≤30/hr）— deferred to Task 7/8
+3. TTL-mode catchup offline_messages JOIN（MVP 不影響，啟用 TTL 前需完成）
 
 ## Known Risks / Blockers
 
@@ -48,7 +49,8 @@
 
 1. Required checks: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check`
 2. Current failing checks (if any): 無
-3. Release / merge blocking conditions: N/A
+3. Test count: 408（63 files）
+4. Release / merge blocking conditions: N/A
 
 ## Antigravity（UI/UX Design Agent）交接狀態
 
@@ -128,24 +130,30 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 
 ## Last Session Record
 
-1. UTC date: 2026-03-02
-2. Session ID: Claude_20260302_2000
+1. UTC date: 2026-03-03
+2. Session ID: Claude_20260303_0700
 3. Completed:
-   - 驗證目錄改名 `OpenClaw` → `AgentVerse` 成功（專案檔案 + Claude memory 搬遷）
-   - `pnpm install --force` 修復 node_modules shims 中的舊路徑
-   - 更新 .gitignore：新增 `ref_doc/`, `/public/`, `dev/ui-ux/concepts_backup/`, `.agent/`, `.claude/`
-   - `git init` + `git add .`（238 files） + initial commit `c12c573`
-   - `git push -u origin main` → `github.com/Adamchanadam/AgentVerse`
-   - MEMORY.md 更新 Root 路徑
+   - **Task 17: Checkpoint**（386/386 tests, all gates green）
+   - **Task 18: E2E 整合測試**（5 子任務全部完成，22 new tests）
+     - PT1: `envelope-builder.ts` — buildSignedEnvelope() helper + fixed WsFrame stubs in channel-plugin.ts + cli-commands.ts
+     - PT2: `setup.ts` — E2E test infrastructure（createE2EHub, connectAndAuth with lastSeenServerSeq, registerAgent, createSignedEnvelope, submitAndWait, FrameCollector）+ `infra.test.ts`（3 tests）
+     - PT3: `pairing-flow.test.ts`（3 tests）— pair.requested→pair.approved, duplicate rejection, non-existent pair rejection. Fixed: pair_id is server-generated UUID, not concatenated agent IDs; query DB via hub.app.db.
+     - PT4: `encrypted-messaging.test.ts`（3 tests）— full X25519+HKDF+XChaCha20 encrypt→relay→decrypt round-trip, non-active pair rejection, not-in-pairing rejection
+     - PT5: `reconnect-catchup.test.ts`（3 tests）— missed events catchup, empty catchup, no catchup without seq. Enhanced connectAndAuth to accept ConnectOptions with lastSeenServerSeq.
+     - PT6: `security-scenarios.test.ts`（5 tests）— replay idempotency, tampered sig, pending pair relay, revoked pair relay, tampered payload
+   - **P14/P15 PBT timeout fix**：Added explicit `{ timeout: 15_000 }` to property-based tests that were flaky under full-suite load
 4. Pending:
-   - 任務 16：Self-Hosted 部署（Docker Compose + 部署配置）
-   - Integration tests
+   - 任務 19：最終 Checkpoint
 5. Next priorities (max 3):
-   - 任務 16（Docker Compose + 部署配置）
-   - Integration tests
-   - Precommit hook setup（`scripts/precommit-guard.mjs`）
-6. Risks / blockers: 無
-7. Validation: typecheck ✅ lint ✅ test 350/350 ✅ format:check ⚠️（3 pre-existing Prettier warnings）
+   - 任務 19（最終 Checkpoint）
+   - Phase 2/3 backlog（Trials Runner, GenePack 交換）
+   - Deployment hardening（Docker Compose 已完成 16.1）
+6. Risks / blockers: TTL-mode catchup 未 JOIN offline_messages（啟用前需完成）
+7. Validation: typecheck ✅ lint ✅ test 408/408 ✅ format:check ✅
+
+### Previous Session Reference（Claude_20260302_2000）
+
+- Git init + initial push to `github.com/Adamchanadam/AgentVerse`; 350/350 tests
 
 ### Previous Session Reference（Claude_20260302_1920）
 
@@ -163,17 +171,18 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 ### Previous Session Reference（Claude_20260302_1800）
 
 - **任務 15.2 Asset Gen CLI 完成**（359 tests total, 44 new）
-   - Subagent-Driven Development 執行 8 Plan Tasks：
-     - PT1：Infrastructure setup（deps, package.json, root typecheck）
-     - PT2：Types + YAML Parser（types.ts, yaml-parser.ts, 9 tests）
-     - PT3：Manifest Generator（generateManifest, mergeManifest, 6 tests）
-     - PT4：Placeholder PNG Generator（categoryColor, generatePlaceholderPng, 9 tests）
-     - ~~PT5：nanobanana MCP Client~~ — 已移除（最終資產由 Antigravity 手工交付）
-     - PT6：CLI Entry Point（parseCliArgs, run, 9 tests）
-     - PT7：Barrel Exports + Integration Test（index.ts, 3 integration tests）
-     - PT8：Full Regression + Docs
-   - Fixed YAML item count mismatch（8→10 items: Antigravity added badge_trial_pass + icon_genepack_node to YAML）
-   - `.kiro/specs/agentverse/tasks.md` 更新：15.1/15.2 標記 [x] ✅
+  - Subagent-Driven Development 執行 8 Plan Tasks：
+    - PT1：Infrastructure setup（deps, package.json, root typecheck）
+    - PT2：Types + YAML Parser（types.ts, yaml-parser.ts, 9 tests）
+    - PT3：Manifest Generator（generateManifest, mergeManifest, 6 tests）
+    - PT4：Placeholder PNG Generator（categoryColor, generatePlaceholderPng, 9 tests）
+    - ~~PT5：nanobanana MCP Client~~ — 已移除（最終資產由 Antigravity 手工交付）
+    - PT6：CLI Entry Point（parseCliArgs, run, 9 tests）
+    - PT7：Barrel Exports + Integration Test（index.ts, 3 integration tests）
+    - PT8：Full Regression + Docs
+  - Fixed YAML item count mismatch（8→10 items: Antigravity added badge_trial_pass + icon_genepack_node to YAML）
+  - `.kiro/specs/agentverse/tasks.md` 更新：15.1/15.2 標記 [x] ✅
+
 4. Pending:
    - 任務 15.3：手動執行 `--mode placeholder` 生成 placeholder pack
    - ~~任務 15.4~~：已取消（nanobanana 移除）

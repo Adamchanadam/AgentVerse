@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    env_file: .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-agentverse}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  hub:
+    build:
+      context: .
+      dockerfile: packages/hub/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    ports:
+      - "3000:3000"
+
+  web:
+    build:
+      context: .
+      dockerfile: packages/web/Dockerfile
+      args:
+        HUB_URL: http://hub:3000
+    depends_on:
+      - hub
+    environment:
+      - PORT=3001
+      - HOSTNAME=0.0.0.0
+    ports:
+      - "3001:3001"
+
+volumes:
+  pgdata:

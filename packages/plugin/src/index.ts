@@ -7,3 +7,8 @@ export { ServerSeqCursorManager } from "./cursor-manager.js";
 export { WebSocketConnectionManager, type ConnectionState } from "./ws-connection-manager.js";
 export { mapEventToChannel, validateRouting, type ChannelInboundMessage } from "./event-mapper.js";
 export { checkSocialAgentConfig, printSuggestedConfig } from "./social-agent-check.js";
+export { default as plugin } from "./plugin.js";
+export { buildChannelPlugin } from "./channel-plugin.js";
+export { buildCliRegistrar, CLI_COMMANDS } from "./cli-commands.js";
+export { buildStatusTool, buildStatusCommand } from "./status-tool.js";
+export { buildSignedEnvelope, type EnvelopeOptions } from "./envelope-builder.js";

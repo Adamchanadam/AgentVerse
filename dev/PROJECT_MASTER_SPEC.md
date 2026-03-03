@@ -86,7 +86,7 @@ openclaw-main/   ← READ-ONLY，禁止修改、禁止 commit
 - `openclaw-main/` 是從 [github.com/openclaw/openclaw](https://github.com/openclaw/openclaw) 下載的只讀參考
 - 所有新代碼只寫入：`packages/`、`tools/`、`tests/`、`scripts/`、`dev/`
 - **Pre-commit guard**：`scripts/precommit-guard.mjs` — 偵測到 `openclaw-main/**` 有 staged 變更即 fail
-- **Mount script**（任務 16.2）：集成測試透過 mount script 將 `packages/plugin` build output 映射到 `openclaw-main/extensions/agentverse`；不得直接在 `openclaw-main/` 內寫源碼
+- **Plugin 安裝**（任務 16.2）：集成測試使用 OpenClaw 原生 plugin loading（`plugins.load.paths` / `openclaw plugins install`），不需 mount script 或符號連結至 `openclaw-main/extensions/`
 - 日後發佈：AgentVerse monorepo 作為獨立 GitHub repo 發佈，`openclaw-main/` 不包含在其中
 
 ### 3.2 護欄驗證
@@ -160,9 +160,11 @@ node scripts/precommit-guard.mjs  # exit 0 = 正常；exit 1 = openclaw-main 有
 | ----------------- | --------------------- | ---------------------------------------------------------- |
 | 單元測試          | Vitest                | 具體範例、邊界案例                                         |
 | 屬性測試（PBT）   | Vitest + fast-check   | 通用屬性（P1-P25）；MVP 必做：P1/P2/P8/P14/P15/P16/P17/P25 |
-| 端到端測試（E2E） | Vitest + 模擬 runtime | 任務 18；僅對 msg.relay 做 E2E                             |
+| 端到端測試（E2E） | Vitest + in-process Hub (pg-mem) | 任務 18；涵蓋配對流程、加密訊息、斷線重連、安全場景 |
 
 Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:check` 必須全綠。
+
+**當前測試指標：408 tests / 63 files（2026-03-03 Session 42）**
 
 ---
 
@@ -201,7 +203,7 @@ Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:c
 
 ## 10. Implementation Progress
 
-> **最後更新：2026-03-02；315/315 tests ✅；47 個測試檔案**
+> **最後更新：2026-03-03；408/408 tests ✅；63 個測試檔案**
 
 ### Task 1–6：基礎設施 + REST API + Checkpoint
 
@@ -245,12 +247,37 @@ Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:c
 | 14.4     | ✅ 完成 | Web API client + AuthProvider（JWT localStorage）+ LoginPage + AgentDex（split-pane）+ Pairing management       |
 | **驗證** | ✅ 通過 | **315/315 tests**                                                                                               |
 
-### 待辦（下一個主要任務）
+### Task 15：Asset Gen CLI
 
-- **Task 15**：Asset Gen CLI ✅ 完成（placeholder mode only；nanobanana 已移除，最終資產由 Antigravity 交付）
-- **Task 16**：Self-Hosted 部署配置（Docker Compose + mount script）
-- **Task 18**：E2E 整合測試（Hub + 2 模擬 runtime）
-- **Task 17/19**：Checkpoint
+| 任務     | 狀態    | 重點                                                                           |
+| -------- | ------- | ------------------------------------------------------------------------------ |
+| 15.1–15.2 | ✅ 完成 | 5 模組（types, yaml-parser, manifest-generator, placeholder-gen, cli）+ 33 tests |
+| **驗證** | ✅ 通過 | **348/348 tests**                                                              |
+
+### Task 16–17：ChannelPlugin + 部署 + Checkpoints
+
+| 任務              | 狀態    | 重點                                                                                           |
+| ----------------- | ------- | ---------------------------------------------------------------------------------------------- |
+| 16.1              | ✅ 完成 | Docker Compose（Hub + PostgreSQL）                                                             |
+| 16.2              | ✅ 完成 | ChannelPlugin 介面 + Plugin entry point + CLI 子命令 + Status Tool + OpenClaw type stubs       |
+| 16.3              | ✅ 完成 | Integration Smoke Test（7 tests mock OpenClaw Plugin API）                                     |
+| **17 Checkpoint** | ✅ 通過 | **386/386 tests**                                                                              |
+
+### Task 18：E2E 整合測試
+
+| 任務 | 狀態    | 重點                                                                                     |
+| ---- | ------- | ---------------------------------------------------------------------------------------- |
+| 18.1 | ✅ 完成 | E2E 基礎設施：in-process Hub (pg-mem) + connectAndAuth + FrameCollector + 3 infra tests  |
+| 18.2 | ✅ 完成 | 配對流程：pair.requested→pair.approved + duplicate/non-existent rejection — 3 tests      |
+| 18.3 | ✅ 完成 | 加密訊息：X25519+HKDF+XChaCha20 encrypt→relay→decrypt round-trip — 3 tests              |
+| 18.4 | ✅ 完成 | 斷線重連：catchup replay + empty catchup + no-seq skip — 3 tests                         |
+| 18.5 | ✅ 完成 | 安全場景：replay/tamper/pending-pair/revoked-pair/payload-tamper — 5 tests               |
+| **驗證** | ✅ 通過 | **408/408 tests**                                                                    |
+
+### 待辦
+
+- **Task 19**：最終 Checkpoint — 確認所有 MVP 測試通過
+- **Phase 2/3 Backlog**：B1 Trials Runner、B2 成長頁面、B3 GenePack 交換
 
 ---
 
@@ -376,7 +403,14 @@ packages/plugin/src/
 ├── ws-connection-manager.ts  ← EventEmitter-based WebSocket 管理，5 狀態
 ├── event-mapper.ts           ← EventEnvelope → Plugin 內部 action 映射
 ├── social-agent-check.ts     ← 驗證 Hub routing 只到 agentId=social
-└── identity.ts               ← IdentityManager（keypair lifecycle，file I/O，0o600 權限）
+├── identity.ts               ← IdentityManager（keypair lifecycle，file I/O，0o600 權限）
+├── openclaw-types.ts         ← OpenClaw type stubs（ChannelPlugin, PluginApi 等最小介面）
+├── envelope-builder.ts       ← createSignedEnvelope() — 完整 EventEnvelope 構建 + 簽名
+├── channel-plugin.ts         ← ChannelPlugin 物件（id/meta/capabilities/config/outbound/status）
+├── cli-commands.ts           ← 3 CLI 子命令（agentverse:register/pair/status）
+├── status-tool.ts            ← agentverse_status tool + agentverse-status command
+├── plugin.ts                 ← Plugin entry point — register() 膠水層，串接所有模組
+└── index.ts                  ← Barrel exports
 ```
 
 ### 13.2 WebSocket 連線狀態機
@@ -459,7 +493,37 @@ disconnected → connecting → authenticating → connected → reconnecting
 
 ---
 
-## 15. Change History
+## 15. E2E Integration Test Patterns（Task 18 確立）
+
+### 15.1 測試基礎設施
+
+```
+packages/hub/src/e2e/
+├── setup.ts                    ← createTestHub() + connectAndAuth() + FrameCollector
+├── infra.test.ts               ← 基礎設施驗證（server start、auth、submit_event）
+├── pairing-flow.test.ts        ← 配對流程 E2E（request→approve + 錯誤場景）
+├── encrypted-messaging.test.ts ← 加密訊息 round-trip（X25519+HKDF+XChaCha20）
+├── reconnect-catchup.test.ts   ← 斷線重連 + catchup replay
+└── security-scenarios.test.ts  ← 安全場景（replay/tamper/pending-pair/revoked-pair）
+```
+
+### 15.2 核心模式
+
+- **In-process Hub**：`createTestHub()` 建立完整 Fastify + WS server（pg-mem in-memory DB），`app.listen({port:0})` 自動取 port，測試結束 `hub.close()`。
+- **Challenge-response auth**：`connectAndAuth(port, opts)` 自動處理 WS 連線 → auth challenge → auth response → auth_result 流程，回傳 `AuthenticatedAgent { ws, kp, agentId, collector }`。
+- **FrameCollector**：`waitFor(predicate, timeout)` 非同步等待特定 frame；`frames` array 儲存所有接收的 frame。
+- **ConnectOptions**：backward-compatible interface，支援 `kp?: TestKeypair` + `lastSeenServerSeq?: string`（catchup 測試用）。
+
+### 15.3 關鍵教訓
+
+- **pair_id 是 server-side `randomUUID()`**：測試不可自行組合 pair_id，必須透過 `hub.app.db.select().from(pairings).where(eq(pairings.agentAId, agentAId))` 查詢實際值。
+- **msg.relay payload 嚴格白名單**：data-policy 只允許 `pair_id`、`ciphertext`、`ephemeral_pubkey` 三個欄位，額外欄位會被過濾。
+- **AAD 綁定**：加密時的 `event_id` 必須與最終 envelope 的 `event_id` 一致；若事後修改 `event_id` 須重新簽名。
+- **PBT 超時**：P14/P15 屬性測試在全套件並行執行時可能超過預設 5s timeout，需設 `{ timeout: 15_000 }`。
+
+---
+
+## 16. Change History
 
 | 日期       | 變更                                                                                                                                                         | Session ID           |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- |
@@ -472,3 +536,7 @@ disconnected → connecting → authenticating → connected → reconnecting
 | 2026-03-02 | Task 10 Plugin 核心模組完成（12/12 sub-tasks）+ Task 11 Checkpoint；282/282 tests；新增 §13 Plugin Patterns                                                  | Claude_20260302_1200 |
 | 2026-03-02 | Task 12 E2E 加密模組完成（2/2 sub-tasks）+ Task 13 Checkpoint；304/304 tests；§4.2.1 實作備註 + §10/§14 全面更新                                             | Claude_20260302_1300 |
 | 2026-03-02 | Task 14 Hub Web UI 完成（8/8 plan tasks）；315/315 tests；新增 §14 Web UI Patterns；§10 進度更新；§11.2 route 順序同步 app.ts；§14→§15 Change History 重編號 | Claude_20260302_1700 |
+| 2026-03-02 | Task 15 Asset Gen CLI 完成（5 模組 + 33 tests）；348/348 tests                                                                                               | Claude_20260302_1800 |
+| 2026-03-02 | OpenClaw Spec 深度審計；requirements.md/design.md/tasks.md 共 9 項 misalignment 修正                                                                         | Claude_20260302_1900 |
+| 2026-03-02 | Task 16.1 Docker Compose + 16.2 ChannelPlugin + 16.3 Integration Smoke + Task 17 Checkpoint；386/386 tests；§13.1 模組架構擴充                               | Claude_20260302_2100 |
+| 2026-03-03 | Task 18 E2E 整合測試完成（18.1-18.5，5 測試檔 17 tests）；408/408 tests；新增 §15 E2E Patterns；§10/§7 全面更新；§15→§16 重編號                              | Claude_20260303_0600 |

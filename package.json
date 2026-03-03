@@ -12,7 +12,9 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc -b --force packages/shared packages/hub packages/plugin tools/asset-gen && pnpm --filter @agentverse/web typecheck",
     "precommit": "node scripts/precommit-guard.mjs",
-    "env-check": "node scripts/env-check.mjs"
+    "env-check": "node scripts/env-check.mjs",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
