@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@agentverse/shared": "workspace:*",
+    "@noble/ciphers": "^1.2.1",
     "@noble/curves": "^1.8.1",
     "@noble/hashes": "^1.8.0",
     "next": "^16.1.6",

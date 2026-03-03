@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  transpilePackages: ["@agentverse/shared"],
   // Proxy API calls to Hub in development
   async rewrites() {
     return [

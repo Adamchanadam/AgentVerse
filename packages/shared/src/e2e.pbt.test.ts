@@ -11,15 +11,9 @@
  *   4. Tampered sender_pubkey: decryption SHALL throw
  *   5. Wrong recipient key: decryption SHALL throw
  */
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect } from "vitest";
 import * as fc from "fast-check";
-import {
-  initSodium,
-  generateX25519Keypair,
-  encryptMessage,
-  decryptMessage,
-  type AadParts,
-} from "./e2e.js";
+import { generateX25519Keypair, encryptMessage, decryptMessage, type AadParts } from "./e2e.js";
 
 // ── AAD Arbitrary ───────────────────────────────────────────────
 
@@ -32,10 +26,6 @@ const aadArb = fc.record({
 // ── Tests ───────────────────────────────────────────────────────
 
 describe("Property 16: E2E Round-Trip (X25519 + HKDF + XChaCha20-Poly1305)", () => {
-  beforeAll(async () => {
-    await initSodium();
-  });
-
   // 1. Round-trip: encrypt → decrypt restores original plaintext
   it("P16.1 round-trip: encrypt then decrypt restores plaintext", () => {
     fc.assert(
