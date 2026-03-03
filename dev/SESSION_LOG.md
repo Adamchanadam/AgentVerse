@@ -1,5 +1,34 @@
 # Session Log
 
+## 2026-03-03 Session 49 — Task 22: Web Chat E2E (Claude)
+
+1. Agent & Session ID: Claude_20260303_1130
+2. Summary: 完成 Task 22 Web Chat E2E：重構 shared/src/e2e.ts 移除 libsodium-wrappers 改用 @noble/ciphers (browser-safe)；建立瀏覽器 WS client + E2E helpers + envelope builder + Chat 頁面。41 net new tests (465→506)。
+3. What was done:
+   - **PT1: shared/src/e2e.ts 重構** — libsodium-wrappers → @noble/ciphers (xchacha20poly1305 from `@noble/ciphers/chacha`) + @noble/curves (x25519, edwardsToMontgomeryPub/Priv)。移除 initSodium/getSodium，移除 createRequire() Node-only hack。Wire format 不變 (nonce(24) || ciphertext_with_tag)。
+   - **PT2: Next.js wiring** — `transpilePackages: ["@agentverse/shared"]` + `@noble/ciphers` dep
+   - **PT3: ws-client.ts** — 瀏覽器 WebSocket client，state machine (disconnected→connecting→authenticating→connected→reconnecting)，challenge-response auth (signs raw nonce bytes)，exponential backoff (1s→30s max)
+   - **Crypto SSOT 對齊** — 24 deterministic cross-verify tests (e2e.cross-verify.test.ts)：fixed test vectors 驗證 X25519 ECDH、HKDF-SHA-256、XChaCha20-Poly1305、AAD binding、wire format、Ed25519→X25519 conversion、full pipeline 雙向
+   - **WS↔Hub integration** — 4 tests (ws-browser-compat.test.ts)：browser-style auth → auth_ok、event receive、ping/pong、wrong sig → auth_error
+   - **PT4: e2e-helpers.ts** — deriveEncryptionKeypair, encryptChat (base64 ciphertext), decryptChat
+   - **PT5: envelope-builder.ts** — buildSignedEnvelope with crypto.randomUUID() + crypto.getRandomValues()
+   - **PT6: Chat page** — /chat route, split-pane (280px sidebar + terminal chat area), BBS retro terminal style (cyan self, yellow peer, dimmed system), [SECURE] badge, E2E encrypted msg.relay send/receive
+   - **NavBar** — +CHAT link
+   - **PT7: 15 browser tests** — 7 ws-client + 5 e2e-helpers + 3 envelope-builder
+4. Key decisions:
+   - `@noble/ciphers` v1.3.0 exports `xchacha20poly1305` from `./chacha` (not `./aead`)
+   - `ed25519KeyToX25519(key, "private")` now takes 32-byte seed (not 64-byte libsodium secret) — compatible with browser crypto.ts key storage
+   - WS auth signs RAW nonce bytes (not "agentverse:" prefix like REST bootstrap) — per auth-handler.ts:37-51
+   - Chat messages are in-memory only (no persistence) — msg.relay is zero-persistence
+   - MsgRelayPayload.ciphertext uses base64 encoding per types.ts spec (hub E2E integration tests use hex — those are server-to-server and unchanged)
+5. Verification: typecheck ✅ lint ✅ test 506/506 ✅ format:check ✅ (1 pre-existing flaky PBT P5 timeout under full suite)
+6. Files changed:
+   - Modified: `packages/shared/package.json` (-libsodium +@noble/ciphers), `packages/shared/src/e2e.ts` (full rewrite), `packages/shared/src/e2e.test.ts` (updated for @noble API), `packages/shared/src/e2e.pbt.test.ts` (remove initSodium), `packages/shared/src/index.ts` (remove initSodium/getSodium exports), `packages/hub/src/e2e/encrypted-messaging.test.ts` (remove initSodium), `packages/web/next.config.ts` (+transpilePackages), `packages/web/package.json` (+@noble/ciphers), `packages/web/src/components/NavBar.tsx` (+CHAT link), `.kiro/specs/agentverse/tasks.md` (Task 22 [x])
+   - New: `packages/shared/src/e2e.cross-verify.test.ts` (24 tests), `packages/hub/src/e2e/ws-browser-compat.test.ts` (4 tests), `packages/web/src/lib/ws-client.ts`, `packages/web/src/lib/ws-client.test.ts` (7 tests), `packages/web/src/lib/e2e-helpers.ts`, `packages/web/src/lib/e2e-helpers.test.ts` (5 tests), `packages/web/src/lib/envelope-builder.ts`, `packages/web/src/lib/envelope-builder.test.ts` (3 tests), `packages/web/src/app/chat/page.tsx`, `packages/web/src/app/chat/chat.module.css`
+7. Next: Task 24 (Phase 1.5 Checkpoint)
+
+---
+
 ## 2026-03-03 Session 46 — Task 20: Browser Self-Bootstrap PoP Auth (Claude)
 
 1. Agent & Session ID: Claude_20260303_1030

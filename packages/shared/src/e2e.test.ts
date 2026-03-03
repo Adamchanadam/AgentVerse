@@ -2,7 +2,6 @@
  * Unit tests for E2E v1 Encryption Module (packages/shared/src/e2e.ts)
  *
  * Covers:
- * - initSodium: idempotent re-initialization
  * - generateX25519Keypair: 32-byte keys, uniqueness
  * - ed25519KeyToX25519: public and private key conversion
  * - Round-trip: simple message, empty string, unicode
@@ -13,10 +12,10 @@
  * Validates: Requirements 4.2 (E2E Encryption)
  */
 
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect } from "vitest";
+import { ed25519 } from "@noble/curves/ed25519";
+import { x25519 } from "@noble/curves/ed25519";
 import {
-  initSodium,
-  getSodium,
   generateX25519Keypair,
   ed25519KeyToX25519,
   encryptMessage,
@@ -26,25 +25,11 @@ import type { AadParts } from "./e2e.js";
 
 // ── Setup ───────────────────────────────────────────────────────
 
-beforeAll(async () => {
-  await initSodium();
-});
-
 const TEST_AAD: AadParts = {
   event_id: "evt-123e4567-e89b-12d3-a456-426614174000",
   pair_id: "pair-abcdef01-2345-6789-abcd-ef0123456789",
   sender_pubkey: "deadbeefdeadbeefdeadbeefdeadbeef",
 };
-
-// ── initSodium ──────────────────────────────────────────────────
-
-describe("initSodium", () => {
-  it("can be called multiple times without error (idempotent)", async () => {
-    await expect(initSodium()).resolves.toBeUndefined();
-    await expect(initSodium()).resolves.toBeUndefined();
-    await expect(initSodium()).resolves.toBeUndefined();
-  });
-});
 
 // ── generateX25519Keypair ───────────────────────────────────────
 
@@ -69,34 +54,35 @@ describe("generateX25519Keypair", () => {
 
 describe("ed25519KeyToX25519", () => {
   it("converts an Ed25519 public key to a 32-byte X25519 public key", () => {
-    const sodium = getSodium();
-    const edKp = sodium.crypto_sign_keypair();
-    const x25519Pub = ed25519KeyToX25519(edKp.publicKey, "public");
+    const seed = ed25519.utils.randomPrivateKey();
+    const edPub = ed25519.getPublicKey(seed);
+    const x25519Pub = ed25519KeyToX25519(edPub, "public");
     expect(x25519Pub).toBeInstanceOf(Uint8Array);
     expect(x25519Pub.length).toBe(32);
   });
 
-  it("converts an Ed25519 private key to a 32-byte X25519 private key", () => {
-    const sodium = getSodium();
-    const edKp = sodium.crypto_sign_keypair();
-    const x25519Priv = ed25519KeyToX25519(edKp.privateKey, "private");
+  it("converts an Ed25519 seed to a 32-byte X25519 private key", () => {
+    const seed = ed25519.utils.randomPrivateKey();
+    const x25519Priv = ed25519KeyToX25519(seed, "private");
     expect(x25519Priv).toBeInstanceOf(Uint8Array);
     expect(x25519Priv.length).toBe(32);
   });
 
   it("converted keys are usable for ECDH", () => {
-    const sodium = getSodium();
     // Generate two Ed25519 keypairs and convert
-    const ed1 = sodium.crypto_sign_keypair();
-    const ed2 = sodium.crypto_sign_keypair();
-    const x1Priv = ed25519KeyToX25519(ed1.privateKey, "private");
-    const x1Pub = ed25519KeyToX25519(ed1.publicKey, "public");
-    const x2Priv = ed25519KeyToX25519(ed2.privateKey, "private");
-    const x2Pub = ed25519KeyToX25519(ed2.publicKey, "public");
+    const seed1 = ed25519.utils.randomPrivateKey();
+    const edPub1 = ed25519.getPublicKey(seed1);
+    const seed2 = ed25519.utils.randomPrivateKey();
+    const edPub2 = ed25519.getPublicKey(seed2);
+
+    const x1Priv = ed25519KeyToX25519(seed1, "private");
+    const x1Pub = ed25519KeyToX25519(edPub1, "public");
+    const x2Priv = ed25519KeyToX25519(seed2, "private");
+    const x2Pub = ed25519KeyToX25519(edPub2, "public");
 
     // ECDH should produce the same shared secret from both sides
-    const ss1 = sodium.crypto_scalarmult(x1Priv, x2Pub);
-    const ss2 = sodium.crypto_scalarmult(x2Priv, x1Pub);
+    const ss1 = x25519.getSharedSecret(x1Priv, x2Pub);
+    const ss2 = x25519.getSharedSecret(x2Priv, x1Pub);
     expect(ss1).toEqual(ss2);
   });
 });

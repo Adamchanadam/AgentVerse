@@ -7,6 +7,7 @@ import styles from "./NavBar.module.css";
 const NAV_ITEMS = [
   { href: "/agentdex", label: "AGENTDEX" },
   { href: "/pairings", label: "PAIRINGS" },
+  { href: "/chat", label: "CHAT" },
 ] as const;
 
 export function NavBar() {
