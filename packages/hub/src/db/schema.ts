@@ -3,8 +3,6 @@ import {
   uuid,
   text,
   integer,
-  boolean,
-  real,
   bigserial,
   bigint,
   jsonb,
@@ -110,22 +108,61 @@ export const lineageEvents = pgTable("lineage_events", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// ─── trials_reports (Phase 2 shell) ────────────────────────────────────────
+// ─── trials (Phase 2 — Prompt Brawl) ──────────────────────────────────────
 
-export const trialsReports = pgTable("trials_reports", {
+export type TrialStatus = "created" | "started" | "reported" | "settled" | "timeout";
+
+export const trials = pgTable("trials", {
   id: uuid("id").primaryKey().defaultRandom(),
-  agentId: uuid("agent_id")
+  pairId: uuid("pair_id")
+    .references(() => pairings.id)
+    .notNull(),
+  ruleId: text("rule_id").notNull(),
+  rulePayload: jsonb("rule_payload").notNull().default({}),
+  seed: text("seed").notNull(),
+  status: text("status").$type<TrialStatus>().notNull().default("created"),
+  createdBy: uuid("created_by")
     .references(() => agents.id)
     .notNull(),
-  trialPackId: text("trial_pack_id").notNull(),
-  version: text("version").notNull(),
-  passRate: real("pass_rate").notNull(),
-  averageScore: real("average_score").notNull(),
-  packHash: text("pack_hash").notNull(),
-  reportSig: text("report_sig").notNull(),
-  dimensions: jsonb("dimensions").notNull().default({}),
-  stable: boolean("stable").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  settledAt: timestamp("settled_at", { withTimezone: true }),
+});
+
+// ─── trial_results ────────────────────────────────────────────────────────
+
+export const trialResults = pgTable("trial_results", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  trialId: uuid("trial_id")
+    .references(() => trials.id)
+    .notNull()
+    .unique(),
+  winnerAgentId: uuid("winner_agent_id")
+    .references(() => agents.id)
+    .notNull(),
+  loserAgentId: uuid("loser_agent_id")
+    .references(() => agents.id)
+    .notNull(),
+  ruleId: text("rule_id").notNull(),
+  triggerEventId: text("trigger_event_id").notNull(),
+  transcriptDigest: text("transcript_digest").notNull(),
+  sigWinner: text("sig_winner").notNull(),
+  sigLoser: text("sig_loser").notNull(),
+  xpWinner: integer("xp_winner").notNull().default(100),
+  xpLoser: integer("xp_loser").notNull().default(25),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ─── agent_stats ──────────────────────────────────────────────────────────
+
+export const agentStats = pgTable("agent_stats", {
+  agentId: uuid("agent_id")
+    .references(() => agents.id)
+    .primaryKey(),
+  wins: integer("wins").notNull().default(0),
+  losses: integer("losses").notNull().default(0),
+  xp: integer("xp").notNull().default(0),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ─── offline_messages (optional TTL store for msg.relay) ───────────────────
@@ -164,8 +201,14 @@ export type NewGenePack = typeof genePacks.$inferInsert;
 export type LineageEvent = typeof lineageEvents.$inferSelect;
 export type NewLineageEvent = typeof lineageEvents.$inferInsert;
 
-export type TrialsReport = typeof trialsReports.$inferSelect;
-export type NewTrialsReport = typeof trialsReports.$inferInsert;
+export type Trial = typeof trials.$inferSelect;
+export type NewTrial = typeof trials.$inferInsert;
+
+export type TrialResult = typeof trialResults.$inferSelect;
+export type NewTrialResult = typeof trialResults.$inferInsert;
+
+export type AgentStat = typeof agentStats.$inferSelect;
+export type NewAgentStat = typeof agentStats.$inferInsert;
 
 export type OfflineMessage = typeof offlineMessages.$inferSelect;
 export type NewOfflineMessage = typeof offlineMessages.$inferInsert;

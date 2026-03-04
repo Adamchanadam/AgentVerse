@@ -1,5 +1,74 @@
 # Session Log
 
+## 2026-03-04 Session 51 — Governance §1b + Phase 2 Prompt Brawl Spec + QA Gate (Claude)
+
+1. Agent & Session ID: Claude_20260304_1600
+2. Summary: 新增 AGENTS.md §1b Cross-Agent Review Alignment；接收 ChatGPT Product Advisor 建議並完成 §1b triage；產出 Phase 2.0 Prompt Brawl 完整規格（tasks + spec + risk register）；完成 ChatGPT 要求的 3 項 pre-implementation QA gate 自檢。
+3. What was done:
+   - **AGENTS.md §1b 新增**：Advisor/Reviewer 角色必須先完成 §1 reads + tasks.md + phase scope 對齊，才能產出建議。Tagging: `[IN-SCOPE]`/`[ADJACENT]`/`[NEW-DIRECTION]`
+   - **Codex CLI 驗證**：v0.106.0 on PATH，支援 `exec -s read-only -o` 非互動只讀輸出
+   - **ChatGPT 建議 §1b Triage**：13 條建議，11 ACCEPT（10 IN-SCOPE + 1 ADJACENT spec-only）、1 DEFER（Elo）、GenePack 定義先行不實作
+   - **tasks.md Phase 2 更新**：B1/B2 backlog 展開為 Tasks 25-28（4 Batches: A=Match Orchestration, B=Browser Trials Runner, C=Arena UI, D=Progression），每 task 含 sub-tasks + DoD
+   - **PROJECT_MASTER_SPEC 新增**：§16 Prompt Brawl Contract（events/settlement/digest/rules/turn/LLM）、§17 GenePack Phase 3 Spec（schema/extraction/safety）、§9/§10 Phase scope 更新、§18 Change History
+   - **Risk Register**：`dev/RISK_REGISTER_PHASE2.md`（7 risks: cheating/digest-mismatch/API-key-leak/timer-manipulation/sybil/abuse/state-desync + MVP mitigations + Phase 2+ roadmap）
+   - **Claude 補充修改**（ChatGPT 未涵蓋）：禁語用預定義 rule set + seed-based deterministic 選取；turn timeout = forfeit；sybil guard 利用既有 self-pair guard
+   - **Phase 2 QA Gate 自檢**（ChatGPT 要求）：3 項自檢完成，詳見下方
+
+4. **Phase 2 QA Gate Self-Check Results**:
+
+   **Check 1: One-rule-one-place SSOT Alignment — PASS（修正後）**
+   - 問題發現：7 處 tasks.md 重複定義了 MASTER_SPEC §16 已有的內容
+     - 25.1: TrialRule 缺少 `difficulty` 欄位 → 改 Ref §16.6
+     - 25.4: 重述 settlement 驗證步驟 → 改 Ref §16.4
+     - 25.5: 重述 rule types → 改 Ref §16.6
+     - 26.2: 重述 LlmProvider/OpenAiProvider 細節 → 改 Ref §16.8
+     - 26.3: 重述 evaluateRule 邏輯 → 改 Ref §16.6
+     - 26.4: 重述 digest 公式 → 改 Ref §16.5
+     - 26.5: 重述 verdict 欄位 + signing + 協調 → 改 Ref §16.3 + §16.4
+     - 28.4: 重述 API key 儲存方式 → 改 Ref §16.8
+   - 修正：全部改為 Ref 引用，tasks.md 不再複製 MASTER_SPEC 定義
+   - 結果：**PASS**
+
+   **Check 2: Fun/UX → Verifiable Loop — PASS**
+   - 檢查 11 個 UI/UX 功能是否都映射到完整 match lifecycle：
+     - Arena 頁面 (27.1) → match 狀態機 (26.1) + settlement (25.4) ✅
+     - Coach Console (26.2) → LLM → msg.relay → E2E → verdict ✅
+     - HP 指示器 (27.2) → 純視覺、不影響勝負 ✅
+     - 結算展示 (27.3) → trials.settled event + agent_stats ✅
+     - AgentDex 入口 (27.4) → create trial → Arena redirect ✅
+     - XP 系統 (28.1) → trials.settled handler 計算 ✅
+     - Badge 系統 (28.2) → trials.settled 自動檢查 ✅
+     - AgentDex Stats (28.3) → GET /api/agents/:id/stats ✅
+     - LLM 設定 (28.4) → localStorage → Coach Console 使用 ✅
+     - Turn timer (26.1) → forfeit 觸發 verdict ✅
+     - [REMATCH] (27.3) → 重新建立 trial ✅
+   - 結果：**PASS**
+
+   **Check 3: Defer Boundary Clarity — PASS（修正後）**
+   - 問題發現：
+     - B3 (GenePack), B4 (Lineage), B5 (Fusion Lab) 缺 why-defer + DoD
+     - B4, B5 缺 why-defer 理由
+     - Phase 2 Non-goals（Elo, CSP, Server LLM, Arbitration）未標明 landing phase + DoD
+   - 修正：
+     - B3-B7 全部補上 Why-defer / Landing Phase / 1-sentence DoD
+     - 新增 Phase 2 Non-goals 表格（4 項：Elo, CSP, Server-side LLM, Arbitration）含 why-defer + landing + DoD
+   - 結果：**PASS**
+
+   **Overall QA Gate: PASS（3/3 checks passed after remediation）**
+
+5. Key decisions:
+   - Prompt Brawl 為 Phase 2 唯一玩法（避免膨脹）
+   - Deterministic 判定（regex/string）+ 雙方簽名結算（不依賴 LLM 裁判）
+   - Browser-first + client-side LLM（用戶自帶 API key）
+   - GenePack Phase 3 只定義 schema，不實作
+   - Elo rating DEFER（MVP 只做 wins/losses）
+6. Verification: AGENTS.md §1b 唯一、tasks.md SSOT Refs correct、MASTER_SPEC §16-17 complete、Risk Register 7 risks、QA Gate 3/3 PASS
+7. Files changed:
+   - Modified: `AGENTS.md` (+§1b), `.kiro/specs/agentverse/tasks.md` (B1/B2→Tasks 25-28 + SSOT Ref fixes + Defer boundary fixes), `dev/PROJECT_MASTER_SPEC.md` (+§16/§17, §9/§10 更新, §18 history), `dev/SESSION_LOG.md`
+   - New: `dev/RISK_REGISTER_PHASE2.md`
+
+---
+
 ## 2026-03-03 Session 50 — Task 24: Phase 1.5 Checkpoint (Claude)
 
 1. Agent & Session ID: Claude_20260303_1400

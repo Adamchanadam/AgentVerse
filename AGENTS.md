@@ -75,6 +75,23 @@ After completing the session file reads, display:
 
 ---
 
+## 1b) Cross-Agent Review Alignment (Mandatory)
+
+Any agent operating in an **Advisor / Reviewer / Product Consultant** role (i.e., not directly writing code) must complete the following alignment reads **before** producing any suggestions, reviews, or recommendations:
+
+1. Complete the §1 Single Entry reads (`SESSION_HANDOFF.md` → `SESSION_LOG.md` → `PROJECT_MASTER_SPEC.md`)
+2. Read the **active task backlog** (`.kiro/specs/agentverse/tasks.md`) to understand what is planned, in-progress, completed, and explicitly deferred
+3. Read the **current phase scope** as defined in `SESSION_HANDOFF.md` → Open Priorities
+
+Hard rules:
+
+1. Suggestions that duplicate an already-planned task must reference the existing task ID, not propose it as new
+2. Suggestions that contradict an explicit deferral decision (recorded in `SESSION_LOG.md` or `PROJECT_MASTER_SPEC.md`) must acknowledge the prior decision and argue why it should be revisited
+3. Every suggestion must be tagged with its **scope relationship**: `[IN-SCOPE]` (within current phase), `[ADJACENT]` (related but not in current phase), or `[NEW-DIRECTION]` (entirely new scope)
+4. The receiving developer agent is **not obligated** to implement any suggestion — each goes through the standard §3 PLAN→READ→CHANGE→QC→PERSIST workflow with explicit triage
+
+---
+
 ## 2) Source of Truth Priority
 
 When documents conflict, the priority order is as follows:

@@ -16,7 +16,7 @@ import { bytesToHex, hexToBytes, utf8ToBytes } from "@noble/hashes/utils";
 import type { EventEnvelope, EventPayload } from "./types.js";
 
 /** Return a canonical sorted-key JSON string (recursive). */
-function sortedKeyJSON(obj: unknown): string {
+export function sortedKeyJSON(obj: unknown): string {
   return JSON.stringify(obj, (_key, value) => {
     if (value !== null && typeof value === "object" && !Array.isArray(value)) {
       const sorted: Record<string, unknown> = {};
