@@ -231,13 +231,13 @@ Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:c
 
 ## 9. Phase Scope
 
-| Phase                      | 說明                                                             | 任務     |
-| -------------------------- | ---------------------------------------------------------------- | -------- |
-| **Phase 0+1（MVP）**       | Hub 骨架、Plugin、AgentDex UI、配對、E2E 盲轉送、E2E 測試        | 1-19 ✅  |
-| **Phase 1.5（Web-First）** | 瀏覽器自助註冊/配對/E2E 聊天/Seed Demo（不依賴 OpenClaw Plugin） | 20-24 ✅ |
-| Phase 2                    | 成長系統（Trials/XP/徽章/技能樹）                                | B1, B2   |
-| Phase 3                    | DNA 互學（GenePack/Lineage）                                     | B3-B5    |
-| Post-MVP                   | 進階反濫用、資料匯出、WCAG AA                                    | B6, B7   |
+| Phase                         | 說明                                                             | 任務     |
+| ----------------------------- | ---------------------------------------------------------------- | -------- |
+| **Phase 0+1（MVP）**          | Hub 骨架、Plugin、AgentDex UI、配對、E2E 盲轉送、E2E 測試        | 1-19 ✅  |
+| **Phase 1.5（Web-First）**    | 瀏覽器自助註冊/配對/E2E 聊天/Seed Demo（不依賴 OpenClaw Plugin） | 20-24 ✅ |
+| **Phase 2.0（Prompt Brawl）** | Human×Agent PvP（deterministic 判定 + 雙方簽名結算 + XP/badges） | 25-28    |
+| Phase 3                       | DNA 互學（GenePack/Lineage）                                     | B3-B5    |
+| Post-MVP                      | 進階反濫用、資料匯出、WCAG AA                                    | B6, B7   |
 
 ---
 
@@ -337,9 +337,9 @@ Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:c
 
 ### 待辦
 
-- **Phase 2 Backlog**：B1 Trials Runner、B2 成長頁面
+- **Phase 2.0 Prompt Brawl**：Tasks 25-28（Match Orchestration → Browser Runner → Arena UI → Progression）
 - **Phase 3 Backlog**：B3 GenePack 交換、B4 Lineage、B5 Fusion Lab
-- **Phase 2+ 建議**：Security headers (nosniff/referrer-policy/frame-ancestors/CSP report-only)、scope-based middleware、Redis-backed NonceStore
+- **Phase 2+ 建議**：Security headers、scope-based middleware、Redis-backed NonceStore、Elo rating
 
 ---
 
@@ -585,21 +585,161 @@ packages/hub/src/e2e/
 
 ---
 
-## 16. Change History
+## 16. Prompt Brawl — Contract（Phase 2.0）
 
-| 日期       | 變更                                                                                                                                                         | Session ID           |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- |
-| 2026-03-01 | 建立本文件；新增 env-check 腳本；文檔化工具鏈 runbook                                                                                                        | Claude_20260301_0720 |
-| 2026-03-01 | 完成 Task 4 DB 層：4 repositories + pg-mem test helper + migrations；126/126 tests；baseline ALL GREEN                                                       | Claude_20260301_1220 |
-| 2026-03-01 | 完成 Task 5 Hub REST API（5.1/5.3完整，5.4部分）；158/158 tests；新增 §10 進度追蹤 + §11 Fastify 模式；tasks.md 同步修正 5.4→[-]                             | Claude_20260301_1900 |
-| 2026-03-02 | Task 6 Checkpoint 通過（158/158 tests）；確認 Hub REST API + DB 層正確                                                                                       | Claude_20260302_0713 |
-| 2026-03-02 | Task 7 Hub WebSocket 伺服器完成（13/13 sub-tasks）；208/208 tests；新增 §12 WebSocket Patterns                                                               | Claude_20260302_0900 |
-| 2026-03-02 | Task 8 Hub 配對狀態機完成（3/3 sub-tasks）+ Task 9 Checkpoint；215/215 tests                                                                                 | Claude_20260302_1030 |
-| 2026-03-02 | Task 10 Plugin 核心模組完成（12/12 sub-tasks）+ Task 11 Checkpoint；282/282 tests；新增 §13 Plugin Patterns                                                  | Claude_20260302_1200 |
-| 2026-03-02 | Task 12 E2E 加密模組完成（2/2 sub-tasks）+ Task 13 Checkpoint；304/304 tests；§4.2.1 實作備註 + §10/§14 全面更新                                             | Claude_20260302_1300 |
-| 2026-03-02 | Task 14 Hub Web UI 完成（8/8 plan tasks）；315/315 tests；新增 §14 Web UI Patterns；§10 進度更新；§11.2 route 順序同步 app.ts；§14→§15 Change History 重編號 | Claude_20260302_1700 |
-| 2026-03-02 | Task 15 Asset Gen CLI 完成（5 模組 + 33 tests）；348/348 tests                                                                                               | Claude_20260302_1800 |
-| 2026-03-02 | OpenClaw Spec 深度審計；requirements.md/design.md/tasks.md 共 9 項 misalignment 修正                                                                         | Claude_20260302_1900 |
-| 2026-03-02 | Task 16.1 Docker Compose + 16.2 ChannelPlugin + 16.3 Integration Smoke + Task 17 Checkpoint；386/386 tests；§13.1 模組架構擴充                               | Claude_20260302_2100 |
-| 2026-03-03 | Task 18 E2E 整合測試完成（18.1-18.5，5 測試檔 17 tests）；408/408 tests；新增 §15 E2E Patterns；§10/§7 全面更新；§15→§16 重編號                              | Claude_20260303_0600 |
-| 2026-03-03 | **Task 19 最終 Checkpoint — MVP COMPLETE**；408/408 tests；17/17 MVP requirements verified；§10 Task 19 結果表；MASTER_SPEC 對齊完畢                         | Claude_20260303_0800 |
+### 16.1 Overview
+
+Prompt Brawl 是 Phase 2 的核心玩法：兩個 Agent（由人類教練微操）在 E2E 加密聊天中對戰，勝負由 deterministic 規則（禁語/regex）判定，Hub 不讀明文，結算靠雙方簽名共識。
+
+### 16.2 Event Types
+
+| Event Type        | Direction | 說明                                                    |
+| ----------------- | --------- | ------------------------------------------------------- |
+| `trials.created`  | Agent→Hub | 建立 match（含 pair_id, rule, seed）                    |
+| `trials.started`  | Hub→Both  | 雙方 ready，match 開始（含 rule_payload）               |
+| `trials.reported` | Agent→Hub | 勝負上報（含 SignedVerdict: verdict + 雙方簽名）        |
+| `trials.settled`  | Hub→Both  | Hub 驗簽通過，結果生效（含 winner/loser + stats delta） |
+
+### 16.3 Verdict Payload & Signing
+
+```typescript
+interface Verdict {
+  match_id: string; // trial UUID
+  winner_agent_id: string;
+  loser_agent_id: string;
+  rule_id: string;
+  trigger_event_id: string; // 觸發禁語的 event
+  transcript_digest: string; // hex, hash chain
+}
+
+// 簽名訊息 = sortedKeyJSON(verdict)（與 EventEnvelope 簽名格式一致）
+interface SignedVerdict {
+  verdict: Verdict;
+  sig_winner: string; // hex, Ed25519 sig by winner agent
+  sig_loser: string; // hex, Ed25519 sig by loser agent
+}
+```
+
+### 16.4 Settlement Protocol
+
+1. 觸發禁語 → 兩端各自生成 Verdict → 各自 Ed25519 簽名
+2. 協調：winner 先透過 msg.relay 發送己方簽名 → loser 驗證並附上己方簽名 → 任一方組裝 `trials.reported` 上報
+3. Hub 驗證：
+   - trial 存在且 status=started
+   - sig_winner 對應 winner_agent_id 的 pubkey
+   - sig_loser 對應 loser_agent_id 的 pubkey
+   - 兩者簽名的 verdict 內容一致
+4. 通過 → 寫入 `trial_results` + 更新 `agent_stats` + 廣播 `trials.settled`
+5. 失敗 → 回傳 `settlement_failed`（reason: sig_mismatch / verdict_mismatch / invalid_state）
+
+**MVP 限制：只接受雙方簽名一致；不做仲裁/上訴。**
+
+### 16.5 Transcript Digest Chain
+
+```
+digest_0 = SHA-256("prompt-brawl-v1" ‖ trial_id)
+digest_n = SHA-256(digest_{n-1} ‖ event_id ‖ sender_pubkey ‖ ciphertext)
+```
+
+- 所有欄位均為 Hub-visible 資料（ciphertext 是加密後的密文 bytes）
+- 兩端獨立計算，結果必須一致
+- Digest 綁入 Verdict，Hub 不驗證 digest 正確性（無法讀明文），但雙方簽名背書其正確性
+
+### 16.6 Trial Rules（MVP）
+
+```typescript
+interface TrialRule {
+  id: string; // e.g. "fw_pineapple_bun"
+  type: "forbidden_word" | "regex";
+  pattern: string; // exact string or regex pattern
+  display_hint: string; // UI display (may be partially masked)
+  difficulty: number; // 1-5, for rule selection balancing
+}
+```
+
+- 規則集為 JSON 靜態定義（`packages/shared/src/trial-rules.ts`）
+- `selectRule(seed)`: 以 seed 做 deterministic 選取（兩端同 seed → 同規則）
+- `evaluateRule(rule, plaintext)`: `forbidden_word` = `text.includes(pattern)`；`regex` = `new RegExp(pattern).test(text)`
+- 評估只在 browser 端對解密後明文執行
+
+### 16.7 Turn Management
+
+- Turn timer: 可配 15s/30s（default 30s）
+- Timeout = forfeit：超時方自動判負（本地觸發 forfeit verdict）
+- 每回合：Coach 輸入戰術 prompt → 本地 LLM 生成 Agent 回覆 → E2E 加密 → msg.relay 送出
+- Coach Console 不直接替代 Agent 說話；只提供策略指引
+
+### 16.8 Client-side LLM Integration
+
+| 項目          | MVP 規格                                                     |
+| ------------- | ------------------------------------------------------------ |
+| LLM 呼叫位置  | Browser（client-side only）                                  |
+| API key 存放  | localStorage（never sent to Hub）                            |
+| Provider 介面 | `LlmProvider { generate(prompt, context): Promise<string> }` |
+| MVP 實作      | `OpenAiProvider`（OpenAI Chat Completions API）              |
+| Phase 2+      | 擴展至其他 providers、local models、OpenClaw plugin 整合     |
+
+---
+
+## 17. GenePack — Phase 3 Spec（定義先行，不實作）
+
+### 17.1 MVP Schema
+
+```typescript
+interface GenePack {
+  id: string; // UUID
+  name: string;
+  type: "attack" | "defense" | "utility";
+  version: number;
+  prompt_template: {
+    system?: string;
+    instructions: string;
+    constraints?: string[];
+    variables?: string[]; // e.g. ["{{opponent_style}}", "{{forbidden_word}}"]
+  };
+  tags: string[];
+  author_agent_id: string;
+  provenance: {
+    source_match_id?: string;
+    transcript_digest?: string;
+    created_at: string; // ISO 8601
+  };
+  visibility: "private" | "public";
+}
+```
+
+### 17.2 Extraction Flow（Phase 3 實作時）
+
+1. Arena 結束 → [Extract GenePack] 按鈕
+2. 本地端從教練指令 + agent prompt 組裝策略 → 結構化為 template
+3. 上傳到 Hub（只上傳 GenePack 結構 + metadata，**不含明文對話**）
+4. 預設 `private`；設為 `public` 需明確確認
+
+### 17.3 Safety Boundary
+
+- GenePack 預設 private
+- 任何分享/交易功能延後到 Phase 3+
+- Provenance（source_match_id + transcript_digest）確保可追溯性
+
+---
+
+## 18. Change History
+
+| 日期       | 變更                                                                                                                                                                                                    | Session ID           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| 2026-03-01 | 建立本文件；新增 env-check 腳本；文檔化工具鏈 runbook                                                                                                                                                   | Claude_20260301_0720 |
+| 2026-03-01 | 完成 Task 4 DB 層：4 repositories + pg-mem test helper + migrations；126/126 tests；baseline ALL GREEN                                                                                                  | Claude_20260301_1220 |
+| 2026-03-01 | 完成 Task 5 Hub REST API（5.1/5.3完整，5.4部分）；158/158 tests；新增 §10 進度追蹤 + §11 Fastify 模式；tasks.md 同步修正 5.4→[-]                                                                        | Claude_20260301_1900 |
+| 2026-03-02 | Task 6 Checkpoint 通過（158/158 tests）；確認 Hub REST API + DB 層正確                                                                                                                                  | Claude_20260302_0713 |
+| 2026-03-02 | Task 7 Hub WebSocket 伺服器完成（13/13 sub-tasks）；208/208 tests；新增 §12 WebSocket Patterns                                                                                                          | Claude_20260302_0900 |
+| 2026-03-02 | Task 8 Hub 配對狀態機完成（3/3 sub-tasks）+ Task 9 Checkpoint；215/215 tests                                                                                                                            | Claude_20260302_1030 |
+| 2026-03-02 | Task 10 Plugin 核心模組完成（12/12 sub-tasks）+ Task 11 Checkpoint；282/282 tests；新增 §13 Plugin Patterns                                                                                             | Claude_20260302_1200 |
+| 2026-03-02 | Task 12 E2E 加密模組完成（2/2 sub-tasks）+ Task 13 Checkpoint；304/304 tests；§4.2.1 實作備註 + §10/§14 全面更新                                                                                        | Claude_20260302_1300 |
+| 2026-03-02 | Task 14 Hub Web UI 完成（8/8 plan tasks）；315/315 tests；新增 §14 Web UI Patterns；§10 進度更新；§11.2 route 順序同步 app.ts；§14→§15 Change History 重編號                                            | Claude_20260302_1700 |
+| 2026-03-02 | Task 15 Asset Gen CLI 完成（5 模組 + 33 tests）；348/348 tests                                                                                                                                          | Claude_20260302_1800 |
+| 2026-03-02 | OpenClaw Spec 深度審計；requirements.md/design.md/tasks.md 共 9 項 misalignment 修正                                                                                                                    | Claude_20260302_1900 |
+| 2026-03-02 | Task 16.1 Docker Compose + 16.2 ChannelPlugin + 16.3 Integration Smoke + Task 17 Checkpoint；386/386 tests；§13.1 模組架構擴充                                                                          | Claude_20260302_2100 |
+| 2026-03-03 | Task 18 E2E 整合測試完成（18.1-18.5，5 測試檔 17 tests）；408/408 tests；新增 §15 E2E Patterns；§10/§7 全面更新；§15→§16 重編號                                                                         | Claude_20260303_0600 |
+| 2026-03-03 | **Task 19 最終 Checkpoint — MVP COMPLETE**；408/408 tests；17/17 MVP requirements verified；§10 Task 19 結果表；MASTER_SPEC 對齊完畢                                                                    | Claude_20260303_0800 |
+| 2026-03-03 | Phase 1.5 Checkpoint (Task 24)；507/507 tests；§4.2 @noble/ciphers, §4.3 Auth Contract, §4.4 Deployment Boundary                                                                                        | Claude_20260303_1400 |
+| 2026-03-04 | **Phase 2.0 Prompt Brawl spec**：§16 Contract (events/settlement/digest/rules/LLM)、§17 GenePack schema (Phase 3 定義)、tasks.md Tasks 25-28、AGENTS.md §1b Cross-Agent Review Alignment、Risk Register | Claude_20260304_1600 |

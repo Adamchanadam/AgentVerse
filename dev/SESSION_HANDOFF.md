@@ -40,9 +40,15 @@
    - Task 21：Web Pairing UX Glue ✅（465 tests）
    - Task 22：Web Chat E2E ✅（507 tests）
    - Task 24：Phase 1.5 Checkpoint ✅（507 tests，all gates green）
-2. **Phase 2 Backlog**（下一步）：B1 Trials Runner、B2 成長頁面
-3. **Phase 3 Backlog**：B3 GenePack 交換、B4 Lineage、B5 Fusion Lab
-4. **Phase 2+ 建議**：Security headers、scope-based middleware、Redis NonceStore（見 PROJECT_MASTER_SPEC §4.4）
+2. **Phase 2.0 Prompt Brawl**（下一步 — spec 完成，待實作）：
+   - Task 25：Match Orchestration（Batch A — 後端 events + DB + settlement）
+   - Task 26：Browser Trials Runner（Batch B — 狀態機 + coach console + rule eval + digest）
+   - Task 27：Arena UI（Batch C — 頁面 + HP meter + 結算展示）
+   - Task 28：Progression（Batch D — XP + badges + stats + Phase 2.0 Checkpoint）
+   - Spec SSOT：PROJECT_MASTER_SPEC §16-17 + tasks.md Tasks 25-28
+   - Risk Register：`dev/RISK_REGISTER_PHASE2.md`（7 risks）
+3. **Phase 3 Backlog**：B3 GenePack 交換（schema 已定義 §17）、B4 Lineage、B5 Fusion Lab
+4. **Phase 2+ 建議**：Security headers、scope-based middleware、Redis NonceStore、Elo rating
 
 ## Known Risks / Blockers
 
@@ -138,26 +144,25 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 ## Last Session Record
 
 1. UTC date: 2026-03-04
-2. Session ID: Claude_20260304_0000 (closeout of Claude_20260303_1400)
+2. Session ID: Claude_20260304_1600
 3. Completed:
-   - **Task 24: Phase 1.5 Checkpoint ✅** — Phase 1.5 全部完成
-     - Regression: typecheck ✅ lint ✅ test 507/507 (71 files) ✅ format:check ✅
-     - Phase 1.5 acceptance: Task 20/21/22/23 全部 PASS（browser UAT verified via Claude-in-Chrome）
-     - Contract consolidation: PROJECT_MASTER_SPEC §4.2 updated (libsodium→@noble/ciphers), §4.3 Auth Contract (PoP+JWT), §4.4 Deployment Boundary (NonceStore/ConnectionManager single-instance risk)
-     - Bug fix: msg.relay forwarding — `recipient_ids` must contain agent IDs for Hub to forward via ConnectionManager.sendTo()
-   - **Previously (same day)**:
-     - Task 22 Web Chat E2E ✅ (507 tests) — PR #1 created
-     - Task 21 Web Pairing UX Glue ✅ (465 tests)
-     - Task 23 Seed/Demo Mode ✅ (449 tests)
-4. Pending: None for Phase 1.5
+   - **AGENTS.md §1b Cross-Agent Review Alignment** — Advisor/Reviewer 角色治理護欄
+   - **Codex CLI 驗證** — v0.106.0 可用（exec -s read-only -o）
+   - **ChatGPT 建議 §1b Triage** — 13 條建議分類（11 ACCEPT, 1 DEFER, 1 ADJACENT spec-only）
+   - **Phase 2.0 Prompt Brawl 完整規格**：
+     - tasks.md: Tasks 25-28（Batch A/B/C/D），含 sub-tasks + DoD
+     - PROJECT_MASTER_SPEC: §16 Contract + §17 GenePack schema
+     - Risk Register: `dev/RISK_REGISTER_PHASE2.md`（7 risks + mitigations）
+4. Pending: Phase 2.0 實作（Tasks 25-28）；PR #1 (task22-web-chat-e2e → main) 待 merge
 5. Next priorities (max 3):
-   - Phase 2 planning（B1 Trials Runner、B2 成長頁面）
-   - Security headers (nosniff/referrer-policy/frame-ancestors/CSP report-only)
-   - Scope-based API middleware (admin vs agent permission isolation)
+   - PR #1 merge → 切新 branch 開始 Phase 2 實作
+   - Task 25 Match Orchestration（Batch A — 後端 events + DB + settlement）
+   - Task 26 Browser Trials Runner（Batch B — 狀態機 + coach console + digest）
 6. Risks / blockers:
-   - TTL-mode catchup 未 JOIN offline_messages（不影響目前功能，啟用 TTL 前需完成）
+   - TTL-mode catchup 未 JOIN offline_messages（不影響目前功能）
    - Agent scope 尚未強制權限隔離（延後至 Phase 2+）
    - NonceStore/ConnectionManager 單實例假設（多 instance 部署前需改 Redis）
+   - Client-side LLM API key 存 localStorage（XSS 風險，見 Risk Register R3）
    - 1 pre-existing flaky PBT (P5 server_seq Monotonic timeout under full suite)
 7. Validation: typecheck ✅ lint ✅ test 507/507 ✅ format:check ✅
 
