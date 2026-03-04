@@ -14,7 +14,7 @@
 
 1. Product / System Layer: AgentVerse Hub + OpenClaw Channel Plugin `agentverse` + Local Trials Runner
 2. Development Governance Layer: AGENTS.md 治理框架 + Kiro spec-driven workflow
-3. Current task belongs to which layer: Product（Phase 1.5 Web-First Usability — Task 20-23 done, Task 24 pending；506/506 tests）
+3. Current task belongs to which layer: Product（**Phase 1.5 完成 ✅**；507/507 tests，71 files）
 4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格已對齊 v2026.3.1 官方 codebase（Session 38 修正 9 項 misalignment + Session 39 深度審計修正 7 項）；持續監控後續版本變化
 
 ## Mandatory Start Checklist
@@ -34,14 +34,15 @@
 
 ## Open Priorities
 
-1. **Phase 1.5：Web-First Usability**（Task 20-24）— 令使用者打開瀏覽器就能用
+1. **Phase 1.5：Web-First Usability ✅ 完成**（Task 20-24 全部通過，507 tests）
    - Task 20：Browser Self-Bootstrap ✅（440 tests）
+   - Task 23：Seed / Demo Mode ✅（449 tests）
    - Task 21：Web Pairing UX Glue ✅（465 tests）
-   - Task 22：Web Chat E2E ✅（506 tests）
-   - Task 23：Seed / Demo Mode ✅（449→465 tests, completed before Task 21）
-   - Task 24：Phase 1.5 Checkpoint（最優先）
-2. Phase 2 Backlog：B1 Trials Runner、B2 成長頁面
-3. Phase 3 Backlog：B3 GenePack 交換、B4 Lineage、B5 Fusion Lab
+   - Task 22：Web Chat E2E ✅（507 tests）
+   - Task 24：Phase 1.5 Checkpoint ✅（507 tests，all gates green）
+2. **Phase 2 Backlog**（下一步）：B1 Trials Runner、B2 成長頁面
+3. **Phase 3 Backlog**：B3 GenePack 交換、B4 Lineage、B5 Fusion Lab
+4. **Phase 2+ 建議**：Security headers、scope-based middleware、Redis NonceStore（見 PROJECT_MASTER_SPEC §4.4）
 
 ## Known Risks / Blockers
 
@@ -55,7 +56,7 @@
 
 1. Required checks: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check`
 2. Current failing checks (if any): 1 pre-existing flaky PBT timeout (P5 server_seq Monotonic — passes in isolation, times out under full suite resource contention)
-3. Test count: 506（70 files）
+3. Test count: 507（71 files）
 4. Release / merge blocking conditions: N/A
 
 ## Antigravity（UI/UX Design Agent）交接狀態
@@ -137,30 +138,28 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 ## Last Session Record
 
 1. UTC date: 2026-03-03
-2. Session ID: Claude_20260303_1130
+2. Session ID: Claude_20260303_1400
 3. Completed:
-   - **Task 22: Web Chat E2E ✅** — 41 net new tests (465→506)
-     - PT1: Refactored `shared/src/e2e.ts` — replaced libsodium-wrappers with @noble/ciphers (xchacha20poly1305) + @noble/curves (x25519, edwardsToMontgomery*). Wire format unchanged.
-     - PT2: `next.config.ts` +transpilePackages, web `package.json` +@noble/ciphers
-     - PT3: `ws-client.ts` — browser WebSocket client with state machine (disconnected→connecting→authenticating→connected→reconnecting), challenge-response auth, exponential backoff reconnect
-     - Crypto SSOT verification: 24 deterministic cross-verify tests in `e2e.cross-verify.test.ts` (X25519 ECDH, HKDF-SHA-256, XChaCha20-Poly1305, AAD, wire format, Ed25519→X25519, full pipeline)
-     - WS↔Hub integration: 4 tests in `ws-browser-compat.test.ts` (browser auth, event receive, ping/pong, wrong sig rejection)
-     - PT4: `e2e-helpers.ts` — browser E2E encrypt/decrypt wrappers (base64 ciphertext, hex ephemeral_pubkey)
-     - PT5: `envelope-builder.ts` — browser signed envelope builder using crypto.randomUUID() + crypto.getRandomValues()
-     - PT6: Chat page (`/chat`) — split-pane (280px sidebar + terminal chat), E2E encrypted msg.relay, BBS retro styling
-     - PT7: 15 browser tests (7 ws-client + 5 e2e-helpers + 3 envelope-builder)
-     - NavBar: +CHAT link
-   - **Previously**: Task 21 Web Pairing UX Glue ✅ (465 tests), Task 23 Seed/Demo Mode ✅ (449 tests)
-4. Pending:
-   - Task 24：Phase 1.5 Checkpoint（最優先）
+   - **Task 24: Phase 1.5 Checkpoint ✅** — Phase 1.5 全部完成
+     - Regression: typecheck ✅ lint ✅ test 507/507 (71 files) ✅ format:check ✅
+     - Phase 1.5 acceptance: Task 20/21/22/23 全部 PASS（browser UAT verified via Claude-in-Chrome）
+     - Contract consolidation: PROJECT_MASTER_SPEC §4.2 updated (libsodium→@noble/ciphers), §4.3 Auth Contract (PoP+JWT), §4.4 Deployment Boundary (NonceStore/ConnectionManager single-instance risk)
+     - Bug fix: msg.relay forwarding — `recipient_ids` must contain agent IDs for Hub to forward via ConnectionManager.sendTo()
+   - **Previously (same day)**:
+     - Task 22 Web Chat E2E ✅ (507 tests) — PR #1 created
+     - Task 21 Web Pairing UX Glue ✅ (465 tests)
+     - Task 23 Seed/Demo Mode ✅ (449 tests)
+4. Pending: None for Phase 1.5
 5. Next priorities (max 3):
-   - Task 24: Phase 1.5 Checkpoint
-   - Phase 2 planning
+   - Phase 2 planning（B1 Trials Runner、B2 成長頁面）
+   - Security headers (nosniff/referrer-policy/frame-ancestors/CSP report-only)
+   - Scope-based API middleware (admin vs agent permission isolation)
 6. Risks / blockers:
-   - TTL-mode catchup 未 JOIN offline_messages（不影響 Phase 1.5，但 TTL 啟用前需完成）
-   - Agent scope 尚未強制權限隔離（admin + agent 都可訪問所有 API，延後至 Phase 2+）
-   - 1 pre-existing flaky PBT (P5 server_seq Monotonic timeout under full suite — passes in isolation)
-7. Validation: typecheck ✅ lint ✅ test 506/506 ✅ format:check ✅
+   - TTL-mode catchup 未 JOIN offline_messages（不影響目前功能，啟用 TTL 前需完成）
+   - Agent scope 尚未強制權限隔離（延後至 Phase 2+）
+   - NonceStore/ConnectionManager 單實例假設（多 instance 部署前需改 Redis）
+   - 1 pre-existing flaky PBT (P5 server_seq Monotonic timeout under full suite)
+7. Validation: typecheck ✅ lint ✅ test 507/507 ✅ format:check ✅
 
 ### Previous Session Reference（Claude_20260302_2000）
 
