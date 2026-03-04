@@ -1,5 +1,87 @@
 # Session Log
 
+## 2026-03-04 Session 52 — Tasks 25-27: Prompt Brawl Full Implementation (Claude)
+
+1. Agent & Session ID: Claude_20260304_2000
+2. Summary: 完成 Phase 2 Batch A+B+C 全部實作（Tasks 25-27）。615 tests（82 files），全 4 gate green。兩次 Codex 代碼審查（Phase 1 + Phase 2），共 12 findings 處理完畢（10 fixed, 2 deferred by design）。
+3. What was done:
+
+   **Phase 0: Hub Prerequisites**
+   - ws-plugin.ts: trials.started auto-broadcast after trials.created accepted
+   - agents.ts: GET /api/agents/:id now includes agent_stats (wins, losses, xp)
+   - E2E test updated: trial-settlement.test.ts expects auto trials.started
+
+   **Phase 1: Task 26 Core Modules（51 new tests）**
+   - 26.4 Transcript Digest Chain: `packages/shared/src/transcript-digest.ts` (initDigest + appendDigest, SHA-256 chain over Hub-visible fields), 5 tests
+   - 26.1 Match State Machine: `packages/web/src/lib/match-state-machine.ts` (idle→challenge_sent→in_progress→judging→reporting→settled), 10 tests (vi.useFakeTimers)
+   - 26.2 Coach Console + LLM Provider: `packages/web/src/lib/llm-provider.ts` (LlmProvider interface + MinimaxProvider + buildCoachPrompt), 6 tests
+   - 26.5 Verdict Coordinator: `packages/web/src/lib/verdict-coordinator.ts` (buildAndSign + receivePeerSig + order-independent assembly), 8 tests
+   - 26.5 BrawlMessage: `packages/web/src/lib/brawl-message.ts` (type discriminator for E2E encrypted msg.relay)
+
+   **Codex Review #1 (Phase 1) — 6 findings:**
+   - #1 [FIXED] match-state-machine turn ownership: challenger goes first (Agent A)
+   - #2 [FIXED] verdict-coordinator sig mismatch: reject when verdicts differ
+   - #3 [DEFERRED] Hub settlement_failed signaling (requires Hub protocol change)
+   - #4 [FIXED] PROJECT_MASTER_SPEC naming: "Verdict" not "TrialVerdict"
+   - #5 [DEFERRED] Hub WS frame persistence for trials.started (requires Hub changes)
+   - #6 [FIXED] seed hex validation + digest encoding spec documented
+
+   **Phase 2: Task 27 Arena UI（6 new tests）**
+   - 27.1-27.3 Arena page: `packages/web/src/app/arena/page.tsx` — 3-column layout (coach/chat/danger), E2E encrypted WS messaging, MiniMax M2.5 BYOK, verdict coordination, transcript digest chain, result overlay
+   - 27.2 DangerMeter: ASCII bar `[████████░░] 80%` with blink at high danger
+   - 27.2 danger-heuristic.ts: longest common substring ratio for forbidden_word rules
+   - 27.3 Result overlay: VICTORY/DEFEAT blink + REMATCH/BACK TO AGENTDEX
+   - 27.4 AgentDex: CHALLENGE button for active pairings → Arena redirect
+   - 27.4 AgentCard: W/L stats display from agent stats API
+   - NavBar: ARENA link added
+
+   **Codex Review #2 (Phase 2) — 6 findings:**
+   - #1 [FIXED] Verdict deadlock: counter-sign when receivePeerSig returns null in judging state
+   - #2 [FIXED] Stale WS closure: handleIncomingEventRef pattern + ruleRef mirror
+   - #3 [FIXED] VerdictCoordinator init race: keypairRef + peerPubkeyRef async pattern
+   - #4 [FIXED] Timeout-forfeit stall: onTurnTimeout calls buildAndSendVerdict
+   - #5 [FIXED] REMATCH button: handleRematch resets all state + reconnects WS
+   - #6 [DEFERRED] Regex danger meter gradient (binary by design for MVP)
+
+4. Key decisions:
+   - MiniMax M2.5 replaces OpenAI for Coach Console LLM (BYOK via localStorage)
+   - Hub auto-sends trials.started after trials.created (no readiness handshake for MVP)
+   - Verdict coordination via E2E encrypted msg.relay (BrawlMessage type discriminator)
+   - Danger meter uses substring overlap heuristic for forbidden_word, binary for regex
+   - Arena routing: /arena?pair=<pairId>&peer=<peerId> (query params, no dynamic route)
+
+5. Verification:
+   - typecheck ✅ lint ✅ test 615/615 (82 files) ✅ format:check ✅
+   - 2 Codex reviews completed (12 findings total: 10 fixed, 2 deferred)
+
+6. Files changed:
+   **New files (16):**
+   - `packages/shared/src/transcript-digest.ts` + `.test.ts`
+   - `packages/web/src/lib/match-state-machine.ts` + `.test.ts`
+   - `packages/web/src/lib/llm-provider.ts` + `.test.ts`
+   - `packages/web/src/lib/verdict-coordinator.ts` + `.test.ts`
+   - `packages/web/src/lib/brawl-message.ts`
+   - `packages/web/src/lib/danger-heuristic.ts` + `.test.ts`
+   - `packages/web/src/app/arena/page.tsx` + `arena.module.css`
+   - `packages/web/src/components/DangerMeter.tsx` + `.module.css`
+
+   **Modified files (9):**
+   - `packages/hub/src/server/ws/ws-plugin.ts` (trials.started auto-broadcast)
+   - `packages/hub/src/server/routes/agents.ts` (stats in GET response)
+   - `packages/hub/src/e2e/trial-settlement.test.ts` (expect auto trials.started)
+   - `packages/shared/src/index.ts` (export transcript-digest)
+   - `packages/web/src/lib/types.ts` (stats field on Agent)
+   - `packages/web/src/components/AgentCard.tsx` + `.module.css` (W/L stats)
+   - `packages/web/src/components/NavBar.tsx` (ARENA link)
+   - `packages/web/src/app/agentdex/page.tsx` (CHALLENGE button)
+
+7. Commits:
+   - `cb2d495` feat(hub+shared+web): Phase 0+1
+   - `90ff14b` fix(web+docs): Codex Phase 1 review fixes
+   - `8a81664` feat(web): Arena page + AgentDex challenge + Codex Phase 2 fixes
+
+---
+
 ## 2026-03-04 Session 51 — Governance §1b + Phase 2 Prompt Brawl Spec + QA Gate (Claude)
 
 1. Agent & Session ID: Claude_20260304_1600

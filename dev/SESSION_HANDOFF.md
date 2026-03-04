@@ -2,11 +2,11 @@
 
 ## Current Baseline
 
-1. Version: Pre-alpha（共用型別 + Event Envelope + WsFrame + 身份管理 + 事件簽名 + Hub DB + REST API + WebSocket 伺服器 + 配對狀態機 + Plugin 核心模組 + E2E 加密模組 + Hub Web UI + Asset Gen CLI + ChannelPlugin + Plugin Entry Point + E2E 整合測試 + PBT P1-P5/P7/P8/P11/P14-P20/P21/P24/P25/P16 完成）
+1. Version: Pre-alpha（Phase 1.5 完成 + Phase 2 Batch A/B/C 完成：Prompt Brawl 後端 + Browser Trials Runner + Arena UI）
 2. Core commands / features: AgentVerse — OpenClaw Agent 社群＋遊戲化成長＋DNA 交換平台
 3. Regression baseline: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check` 全綠
-4. Release / merge status: PR #1 open (`task22-web-chat-e2e` → `main`)：https://github.com/Adamchanadam/AgentVerse/pull/1
-5. Active branch / environment: `task22-web-chat-e2e` branch @ `D:\_Adam_Projects\AgentVerse`（PR 待 merge）
+4. Release / merge status: `phase2-batch-b-trials-runner` branch ready for PR → `main`
+5. Active branch / environment: `phase2-batch-b-trials-runner` branch @ `D:\_Adam_Projects\AgentVerse`
 6. External platforms / dependencies in scope: OpenClaw（openclaw-main/ 為參考 codebase）、PostgreSQL、Neon（可選）、React/Next.js、Fastify
 7. Conda environment: `adamlab4_env`（Node v22.14.0、npm 10.9.2、pnpm 9.15.4）
 
@@ -14,7 +14,7 @@
 
 1. Product / System Layer: AgentVerse Hub + OpenClaw Channel Plugin `agentverse` + Local Trials Runner
 2. Development Governance Layer: AGENTS.md 治理框架 + Kiro spec-driven workflow
-3. Current task belongs to which layer: Product（**Phase 1.5 完成 ✅**；507/507 tests，71 files）
+3. Current task belongs to which layer: Product（**Phase 2 Batch A/B/C 完成 ✅**；615/615 tests，82 files）
 4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格已對齊 v2026.3.1 官方 codebase（Session 38 修正 9 項 misalignment + Session 39 深度審計修正 7 項）；持續監控後續版本變化
 
 ## Mandatory Start Checklist
@@ -34,21 +34,18 @@
 
 ## Open Priorities
 
-1. **Phase 1.5：Web-First Usability ✅ 完成**（Task 20-24 全部通過，507 tests）
-   - Task 20：Browser Self-Bootstrap ✅（440 tests）
-   - Task 23：Seed / Demo Mode ✅（449 tests）
-   - Task 21：Web Pairing UX Glue ✅（465 tests）
-   - Task 22：Web Chat E2E ✅（507 tests）
-   - Task 24：Phase 1.5 Checkpoint ✅（507 tests，all gates green）
-2. **Phase 2.0 Prompt Brawl**（下一步 — spec 完成，待實作）：
-   - Task 25：Match Orchestration（Batch A — 後端 events + DB + settlement）
-   - Task 26：Browser Trials Runner（Batch B — 狀態機 + coach console + rule eval + digest）
-   - Task 27：Arena UI（Batch C — 頁面 + HP meter + 結算展示）
-   - Task 28：Progression（Batch D — XP + badges + stats + Phase 2.0 Checkpoint）
-   - Spec SSOT：PROJECT_MASTER_SPEC §16-17 + tasks.md Tasks 25-28
+1. **Phase 1.5：Web-First Usability ✅ 完成**（Task 20-24，507 tests）
+2. **Phase 2.0 Prompt Brawl — Batch A/B/C ✅ 完成**（Task 25-27，615 tests）：
+   - Task 25：Match Orchestration ✅（558 tests — types, schema, rules, repos, settlement, E2E）
+   - Task 26：Browser Trials Runner ✅（609 tests — state machine, LLM provider, digest chain, verdict coordinator）
+   - Task 27：Arena UI ✅（615 tests — Arena page, DangerMeter, AgentDex challenge, Codex review fixes）
+   - 2 Codex reviews completed（12 findings: 10 fixed, 2 deferred by design）
+3. **Phase 2.0 Batch D — Progression（下一步）**：
+   - Task 28：XP + badges + stats + LLM settings + Phase 2.0 Checkpoint
+   - Spec SSOT：PROJECT_MASTER_SPEC §16-17 + tasks.md Task 28
    - Risk Register：`dev/RISK_REGISTER_PHASE2.md`（7 risks）
-3. **Phase 3 Backlog**：B3 GenePack 交換（schema 已定義 §17）、B4 Lineage、B5 Fusion Lab
-4. **Phase 2+ 建議**：Security headers、scope-based middleware、Redis NonceStore、Elo rating
+4. **Phase 3 Backlog**：B3 GenePack 交換（schema 已定義 §17）、B4 Lineage、B5 Fusion Lab
+5. **Phase 2+ 建議**：Security headers、scope-based middleware、Redis NonceStore、Elo rating
 
 ## Known Risks / Blockers
 
@@ -62,7 +59,7 @@
 
 1. Required checks: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check`
 2. Current failing checks (if any): 1 pre-existing flaky PBT timeout (P5 server_seq Monotonic — passes in isolation, times out under full suite resource contention)
-3. Test count: 507（71 files）
+3. Test count: 615（82 files）
 4. Release / merge blocking conditions: N/A
 
 ## Antigravity（UI/UX Design Agent）交接狀態
@@ -144,27 +141,26 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 ## Last Session Record
 
 1. UTC date: 2026-03-04
-2. Session ID: Claude_20260304_1600
+2. Session ID: Claude_20260304_2000
 3. Completed:
-   - **AGENTS.md §1b Cross-Agent Review Alignment** — Advisor/Reviewer 角色治理護欄
-   - **Codex CLI 驗證** — v0.106.0 可用（exec -s read-only -o）
-   - **ChatGPT 建議 §1b Triage** — 13 條建議分類（11 ACCEPT, 1 DEFER, 1 ADJACENT spec-only）
-   - **Phase 2.0 Prompt Brawl 完整規格**：
-     - tasks.md: Tasks 25-28（Batch A/B/C/D），含 sub-tasks + DoD
-     - PROJECT_MASTER_SPEC: §16 Contract + §17 GenePack schema
-     - Risk Register: `dev/RISK_REGISTER_PHASE2.md`（7 risks + mitigations）
-4. Pending: Phase 2.0 實作（Tasks 25-28）；PR #1 (task22-web-chat-e2e → main) 待 merge
+   - **Task 25: Match Orchestration (Batch A)** ✅ — trials types, DB schema, rules engine, repositories, settlement handler, E2E test (558 tests)
+   - **Task 26: Browser Trials Runner (Batch B)** ✅ — match state machine, LLM provider (MiniMax M2.5), transcript digest chain, verdict coordinator, brawl-message type (609 tests)
+   - **Task 27: Arena UI (Batch C)** ✅ — Arena page (3-column coach/chat/danger), DangerMeter, AgentDex challenge integration, NavBar ARENA link (615 tests)
+   - **Hub Prerequisites** — trials.started auto-broadcast, agent stats in REST API
+   - **2 Codex Reviews** — 12 findings total (10 fixed, 2 deferred by design)
+4. Pending: Task 28 Progression (Batch D); branch `phase2-batch-b-trials-runner` ready for PR
 5. Next priorities (max 3):
-   - PR #1 merge → 切新 branch 開始 Phase 2 實作
-   - Task 25 Match Orchestration（Batch A — 後端 events + DB + settlement）
-   - Task 26 Browser Trials Runner（Batch B — 狀態機 + coach console + digest）
+   - PR: `phase2-batch-b-trials-runner` → `main`
+   - Task 28 Progression（Batch D — XP + badges + stats + LLM settings）
+   - Phase 2.0 Checkpoint
 6. Risks / blockers:
    - TTL-mode catchup 未 JOIN offline_messages（不影響目前功能）
    - Agent scope 尚未強制權限隔離（延後至 Phase 2+）
-   - NonceStore/ConnectionManager 單實例假設（多 instance 部署前需改 Redis）
    - Client-side LLM API key 存 localStorage（XSS 風險，見 Risk Register R3）
+   - Turn timer client-side only, no Hub enforcement (Risk R4)
    - 1 pre-existing flaky PBT (P5 server_seq Monotonic timeout under full suite)
-7. Validation: typecheck ✅ lint ✅ test 507/507 ✅ format:check ✅
+   - Stray `-` file in repo root (harmless, untracked)
+7. Validation: typecheck ✅ lint ✅ test 615/615 (82 files) ✅ format:check ✅
 
 ### Previous Session Reference（Claude_20260302_2000）
 
