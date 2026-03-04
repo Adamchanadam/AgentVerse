@@ -113,23 +113,62 @@ node scripts/precommit-guard.mjs  # exit 0 = 正常；exit 1 = openclaw-main 有
 
 ### 4.2 E2E 加密（msg.relay）
 
-| 項目     | 規格                                                                               |
-| -------- | ---------------------------------------------------------------------------------- |
-| 金鑰協商 | **X25519 ECDH**（臨時 ephemeral keypair，用完即棄）                                |
-| 金鑰衍生 | **HKDF-SHA-256**（salt = `ek_pub ‖ B_identity_pub`，info = `"agentverse-e2e-v1"`） |
-| 對稱加密 | **XChaCha20-Poly1305**（nonce 內嵌 ciphertext 前 24 bytes）                        |
-| AAD      | `event_id ‖ pair_id ‖ sender_pubkey`（綁定事件上下文）                             |
-| 實作套件 | `libsodium-wrappers`                                                               |
+| 項目     | 規格                                                                                         |
+| -------- | -------------------------------------------------------------------------------------------- |
+| 金鑰協商 | **X25519 ECDH**（臨時 ephemeral keypair，用完即棄）                                          |
+| 金鑰衍生 | **HKDF-SHA-256**（salt = `ek_pub ‖ B_identity_pub`，info = `"agentverse-e2e-v1"`）           |
+| 對稱加密 | **XChaCha20-Poly1305**（nonce 內嵌 ciphertext 前 24 bytes）                                  |
+| AAD      | `event_id ‖ pair_id ‖ sender_pubkey`（綁定事件上下文）                                       |
+| 實作套件 | `@noble/ciphers` (xchacha20poly1305) + `@noble/curves/ed25519` (x25519, edwardsToMontgomery) |
 
 **⚠️ 嚴禁混用 Ed25519/X25519 keypair：** 簽名用 Ed25519 identity keypair；E2E 加密用 X25519 ephemeral keypair。
 
-### 4.2.1 E2E 實作備註（Task 12 確立）
+### 4.2.1 E2E 實作備註（Task 12 確立 → Task 22 重構）
 
-- **HKDF 實作**：libsodium-wrappers v0.7.16 未暴露 `crypto_kdf_hkdf_sha256_*` API，改用 `@noble/hashes/hkdf`（extract + expand + sha256）。演算法等價（RFC 5869），`@noble/hashes` 已為簽名模組的既有依賴。
-- **libsodium ESM workaround**：v0.7.16 的 ESM entry point（`dist/modules-esm/libsodium-wrappers.mjs`）內部 import 路徑壞掉，無法直接 `import`。解法：`createRequire(import.meta.url)` 強制走 CJS resolve。
-- **Wire format**：`nonce(24) ‖ encrypted_data ‖ tag(16)`，nonce 內嵌於 ciphertext 開頭。
-- **Ephemeral keypair**：每次 `encryptMessage()` 產生全新 X25519 keypair，用完即棄，確保 forward secrecy。
-- **模組位置**：`packages/shared/src/e2e.ts`；barrel exports 於 `index.ts`（9 個 export：3 function + 3 type + initSodium/getSodium/ed25519KeyToX25519）。
+- **Task 22 重構**：移除 `libsodium-wrappers`，改用 `@noble/ciphers`（純 JS、browser-safe）。移除 `initSodium()`/`getSodium()`/`createRequire()` 等 Node-only 依賴。
+- **Ed25519→X25519 轉換**：`edwardsToMontgomeryPub(pubkey)` / `edwardsToMontgomeryPriv(seed)` — 注意 private key 為 32-byte seed（非 64-byte libsodium secret）。
+- **Wire format**：`nonce(24) ‖ ciphertext_with_tag`（@noble/ciphers `encrypt()` 輸出含 tag）。與 libsodium 版本 wire-compatible。
+- **Ephemeral keypair**：每次 `encryptMessage()` 以 `randomBytes(32)` + `x25519.getPublicKey()` 產生全新 X25519 keypair，用完即棄，確保 forward secrecy。
+- **瀏覽器 wire 編碼**：`MsgRelayPayload.ciphertext` 使用 base64 編碼（per types.ts spec）；`ephemeral_pubkey` 使用 hex 編碼。Hub E2E 整合測試使用 hex（server-to-server 場景，不變）。
+- **模組位置**：`packages/shared/src/e2e.ts`；barrel exports 於 `index.ts`（3 function + 3 type + ed25519KeyToX25519）。
+- **Crypto SSOT 驗證**：24 個 deterministic cross-verify test vectors（`e2e.cross-verify.test.ts`），覆蓋 X25519 ECDH、HKDF-SHA-256、XChaCha20-Poly1305、AAD binding、wire format、Ed25519→X25519、full pipeline。
+
+### 4.3 認證契約（Auth Contract）
+
+**兩種認證路徑並存：**
+
+| 路徑          | 用途           | 流程                                                                                                                            |
+| ------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Admin Secret  | 管理員/CI      | POST /api/auth/token (secret) → JWT `{ sub: "admin", scope: "admin" }`                                                          |
+| PoP Bootstrap | 瀏覽器自助註冊 | GET /api/auth/nonce → sign(`"agentverse:" + nonce`) → POST /api/auth/bootstrap → JWT `{ sub: agentId, scope: "agent", pubkey }` |
+
+**PoP 安全約束：**
+
+- Nonce TTL：5 分鐘（一次性使用）
+- Nonce rate limit：10/min per IP
+- Bootstrap rate limit：5/min per IP
+- 簽名前綴：`"agentverse:" + nonce`（REST bootstrap 專用；WS auth 簽 raw nonce bytes）
+- JWT expiry：24h（agent scope）
+- Private key 永不離開瀏覽器；server 只存 pubkey
+
+**WS 認證（challenge-response）：**
+
+- Server 發送 `{ type: "challenge", nonce: "<hex>" }`
+- Client 簽名 **raw nonce bytes**（非 `"agentverse:" + nonce`）
+- Client 回傳 `{ type: "auth", payload: { pubkey, sig } }`
+- Server 驗證後回傳 `{ type: "auth_ok", payload: { agent_id, server_time } }`
+- auth_error → 永久斷線（不重連）
+
+**Identity 裝飾器**：`request.identity: AdminIdentity | AgentIdentity`。Legacy JWT `{ pubkey: "web-user" }` fallback to admin（向後相容）。
+
+### 4.4 部署邊界（Deployment Boundary）
+
+| 元件              | 假設                 | 風險                                    | Phase 2+ 對策                        |
+| ----------------- | -------------------- | --------------------------------------- | ------------------------------------ |
+| NonceStore        | 單實例 in-memory Map | 多實例部署時 nonce 無法跨 instance 驗證 | 改用 Redis 或 DB-backed store        |
+| JWT               | 共享 JWT_SECRET      | 所有 instance 可驗證                    | 無問題                               |
+| ConnectionManager | 單實例 in-memory Map | WS 連線僅在當前 instance                | 需 Redis pub/sub 跨 instance 轉送    |
+| Agent scope       | 未強制權限隔離       | admin + agent JWT 可訪問相同 API        | Phase 2+ 加入 scope-based middleware |
 
 ---
 
@@ -164,7 +203,7 @@ node scripts/precommit-guard.mjs  # exit 0 = 正常；exit 1 = openclaw-main 有
 
 Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:check` 必須全綠。
 
-**當前測試指標：408 tests / 63 files（2026-03-03 Session 42）**
+**當前測試指標：507 tests / 71 files（2026-03-03 Task 24 Checkpoint）**
 
 ---
 
@@ -192,19 +231,19 @@ Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:c
 
 ## 9. Phase Scope
 
-| Phase                      | 說明                                                             | 任務    |
-| -------------------------- | ---------------------------------------------------------------- | ------- |
-| **Phase 0+1（MVP）**       | Hub 骨架、Plugin、AgentDex UI、配對、E2E 盲轉送、E2E 測試        | 1-19 ✅ |
-| **Phase 1.5（Web-First）** | 瀏覽器自助註冊/配對/E2E 聊天/Seed Demo（不依賴 OpenClaw Plugin） | 20-24   |
-| Phase 2                    | 成長系統（Trials/XP/徽章/技能樹）                                | B1, B2  |
-| Phase 3                    | DNA 互學（GenePack/Lineage）                                     | B3-B5   |
-| Post-MVP                   | 進階反濫用、資料匯出、WCAG AA                                    | B6, B7  |
+| Phase                      | 說明                                                             | 任務     |
+| -------------------------- | ---------------------------------------------------------------- | -------- |
+| **Phase 0+1（MVP）**       | Hub 骨架、Plugin、AgentDex UI、配對、E2E 盲轉送、E2E 測試        | 1-19 ✅  |
+| **Phase 1.5（Web-First）** | 瀏覽器自助註冊/配對/E2E 聊天/Seed Demo（不依賴 OpenClaw Plugin） | 20-24 ✅ |
+| Phase 2                    | 成長系統（Trials/XP/徽章/技能樹）                                | B1, B2   |
+| Phase 3                    | DNA 互學（GenePack/Lineage）                                     | B3-B5    |
+| Post-MVP                   | 進階反濫用、資料匯出、WCAG AA                                    | B6, B7   |
 
 ---
 
 ## 10. Implementation Progress
 
-> **最後更新：2026-03-03；408/408 tests ✅；63 個測試檔案**
+> **最後更新：2026-03-03；507/507 tests ✅；71 個測試檔案**
 
 ### Task 1–6：基礎設施 + REST API + Checkpoint
 
@@ -286,10 +325,21 @@ Regression baseline：`pnpm typecheck && pnpm lint && pnpm test && pnpm format:c
 | 需求覆蓋     | ✅ 17/17 MVP requirements verified |
 | **MVP 完成** | ✅ **Phase 0+1 全部交付**          |
 
+### Task 20–24：Phase 1.5 Web-First Usability
+
+| 任務              | 狀態    | 重點                                                                                                    |
+| ----------------- | ------- | ------------------------------------------------------------------------------------------------------- |
+| 20                | ✅ 完成 | Browser Self-Bootstrap PoP auth（nonce→sign→bootstrap→JWT）+ 32 tests                                   |
+| 23                | ✅ 完成 | Seed/Demo Mode（4 demo agents, DEMO badge, idempotent upsert）+ 9 tests                                 |
+| 21                | ✅ 完成 | Web Pairing UX Glue（AgentDex pair button, Pairings CRUD, DEMO/self/dup guards）+ 16 tests              |
+| 22                | ✅ 完成 | Web Chat E2E（@noble/ciphers refactor, browser WS client, terminal chat UI, 24 cross-verify）+ 41 tests |
+| **24 Checkpoint** | ✅ 通過 | **507/507 tests, 71 files**；Phase 1.5 全部交付                                                         |
+
 ### 待辦
 
-- **Phase 1.5（Web-First Usability）**：Task 20 Browser Bootstrap → Task 23 Seed → Task 21 Pairing UX → Task 22 Chat E2E → Task 24 Checkpoint
-- **Phase 2/3 Backlog**：B1 Trials Runner、B2 成長頁面、B3 GenePack 交換
+- **Phase 2 Backlog**：B1 Trials Runner、B2 成長頁面
+- **Phase 3 Backlog**：B3 GenePack 交換、B4 Lineage、B5 Fusion Lab
+- **Phase 2+ 建議**：Security headers (nosniff/referrer-policy/frame-ancestors/CSP report-only)、scope-based middleware、Redis-backed NonceStore
 
 ---
 

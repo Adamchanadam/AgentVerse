@@ -1,5 +1,35 @@
 # Session Log
 
+## 2026-03-03 Session 50 — Task 24: Phase 1.5 Checkpoint (Claude)
+
+1. Agent & Session ID: Claude_20260303_1400
+2. Summary: Phase 1.5 Checkpoint 完成。所有 4 gate 全綠（507/507 tests, 71 files）。Contract consolidation 完成（§4.2 @noble/ciphers, §4.3 Auth Contract, §4.4 Deployment Boundary）。
+3. What was done:
+   - **Regression gates**: typecheck ✅, lint ✅, test 507/507 ✅, format:check ✅ (fixed SESSION_HANDOFF.md prettier issue)
+   - **Phase 1.5 acceptance** (all PASS):
+     - Task 20 Browser Self-Bootstrap: PASS — new user creates agent, re-auth on revisit, NavBar agent badge
+     - Task 23 Seed/Demo Mode: PASS — 4 demo agents, [DEMO] badge, pairing disabled, idempotent upsert
+     - Task 21 Web Pairing UX Glue: PASS — AgentDex pair button, Pairings CRUD, DEMO/self/dup/ownership guards
+     - Task 22 Web Chat E2E: PASS — WS real-time relay, XChaCha20-Poly1305, bidirectional CJK, DEMO/unpaired rejection
+   - **Contract consolidation** (PROJECT_MASTER_SPEC.md):
+     - §4.2: Updated 實作套件 from `libsodium-wrappers` to `@noble/ciphers + @noble/curves`
+     - §4.2.1: Removed libsodium ESM workaround; updated to reflect @noble API (32-byte seed, edwardsToMontgomery, randomBytes)
+     - §4.3 (NEW): Auth Contract — PoP bootstrap flow, WS challenge-response, JWT scope, rate limits, identity decorator
+     - §4.4 (NEW): Deployment Boundary — NonceStore/ConnectionManager single-instance assumptions, Phase 2+ Redis migration path
+     - §9: Phase 1.5 marked ✅
+     - §10: Updated test metrics (507/71) + added Phase 1.5 progress table
+   - **Bug fix during UAT**: msg.relay forwarding required `recipient_ids` to contain agent IDs (not empty array) for Hub ConnectionManager.sendTo() to forward events
+   - **Scope control**: ChatGPT suggested adding security headers (nosniff/CSP) in this checkpoint — declined per AGENTS.md §7 (change scope discipline). Recorded as Phase 2+ recommendation.
+4. Key decisions:
+   - Security headers deferred to Phase 2+ (checkpoint = verify, not add features)
+   - Phase 1.5 test growth: 408 → 507 (+99 tests, +8 files)
+5. Verification: typecheck ✅ lint ✅ test 507/507 ✅ format:check ✅
+6. Files changed:
+   - Modified: `dev/PROJECT_MASTER_SPEC.md` (§4.2-4.4 contracts, §9-10 progress), `dev/SESSION_HANDOFF.md`, `dev/SESSION_LOG.md`, `.kiro/specs/agentverse/tasks.md` (Task 24 [x])
+7. Next: Phase 2 planning (B1 Trials Runner, B2 成長頁面)
+
+---
+
 ## 2026-03-03 Session 49 — Task 22: Web Chat E2E (Claude)
 
 1. Agent & Session ID: Claude_20260303_1130
