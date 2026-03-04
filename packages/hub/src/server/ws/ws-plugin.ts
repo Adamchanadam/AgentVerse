@@ -21,6 +21,7 @@ import websocket from "@fastify/websocket";
 import type { FastifyInstance } from "fastify";
 import type { WebSocket } from "ws";
 import type { EventEnvelope, EventType, EventPayload, WsFrame } from "@agentverse/shared";
+import { selectRule } from "@agentverse/shared";
 import { SlidingWindowLimiter } from "./rate-limiter.js";
 import { ConnectionManager } from "./connection-manager.js";
 import { generateNonce, verifyAuth } from "./auth-handler.js";
@@ -340,6 +341,39 @@ async function wsPluginImpl(app: FastifyInstance): Promise<void> {
 
       // Send result back to sender
       sendFrame(socket, { type: "submit_result", payload: resultFrame });
+
+      // Handle trials.created → auto-broadcast trials.started
+      if (envelope.event_type === "trials.created" && resultFrame.status === "accepted") {
+        const tcPayload = envelope.payload as unknown as { pair_id: string; seed: string };
+        const pairing = await pairingRepo.findById(tcPayload.pair_id);
+        if (pairing) {
+          const trialRows = await trialsRepo.getByPairId(tcPayload.pair_id);
+          const newTrial = trialRows.find((t) => t.status === "created");
+          if (newTrial) {
+            await trialsRepo.transitionStatus(newTrial.id, "created", "started");
+            const rule = selectRule(tcPayload.seed);
+            const startedFrame: WsFrame = {
+              type: "event",
+              payload: {
+                event_id: crypto.randomUUID(),
+                event_type: "trials.started" as EventType,
+                ts: new Date().toISOString(),
+                sender_pubkey: "hub",
+                recipient_ids: [pairing.agentAId, pairing.agentBId],
+                nonce: "",
+                sig: "",
+                payload: {
+                  trial_id: newTrial.id,
+                  rule_payload: rule,
+                } as unknown as EventPayload,
+              },
+              server_seq: resultFrame.server_seq ?? "0",
+            };
+            connections.sendTo(pairing.agentAId, startedFrame);
+            connections.sendTo(pairing.agentBId, startedFrame);
+          }
+        }
+      }
 
       // Handle trials.reported settlement
       if (envelope.event_type === "trials.reported" && resultFrame.status === "accepted") {

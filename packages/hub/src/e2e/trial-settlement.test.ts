@@ -20,7 +20,6 @@ import {
   type AuthenticatedAgent,
 } from "./setup.js";
 import { pairings, trials, trialResults, agentStats } from "../db/schema.js";
-import { TrialsRepository } from "../db/repositories/trials.repository.js";
 
 describe("E2E: Trial settlement flow", () => {
   let hub: E2EHub;
@@ -87,16 +86,27 @@ describe("E2E: Trial settlement flow", () => {
       expect(createResult.payload.status).toBe("accepted");
     }
 
-    // 2. Verify trial row exists in DB (status=created)
+    // 2. Both agents should receive trials.started auto-broadcast
+    const startedA = await agentA.collector.waitFor(
+      (f) => f.type === "event" && f.payload.event_type === "trials.started",
+    );
+    expect(startedA.type).toBe("event");
+    if (startedA.type === "event") {
+      expect(startedA.payload.payload).toHaveProperty("trial_id");
+      expect(startedA.payload.payload).toHaveProperty("rule_payload");
+    }
+
+    const startedB = await agentB.collector.waitFor(
+      (f) => f.type === "event" && f.payload.event_type === "trials.started",
+    );
+    expect(startedB.type).toBe("event");
+
+    // 3. Verify trial transitioned to "started" in DB
     const trialRows = await hub.app.db.select().from(trials).where(eq(trials.pairId, pairId));
     expect(trialRows.length).toBe(1);
-    expect(trialRows[0].status).toBe("created");
+    expect(trialRows[0].status).toBe("started");
     expect(trialRows[0].ruleId).toBe("fw_hello");
     const trialId = trialRows[0].id;
-
-    // 3. Transition trial to "started" (simulate Hub action)
-    const trialsRepo = new TrialsRepository(hub.app.db);
-    await trialsRepo.transitionStatus(trialId, "created", "started");
 
     // 4. Both agents build identical Verdict and sign
     const verdict: Verdict = {
