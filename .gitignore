@@ -5,6 +5,7 @@ node_modules/
 dist/
 .next/
 out/
+*.tsbuildinfo
 
 # Environment
 .env
@@ -28,6 +29,7 @@ coverage/
 
 # openclaw-main is READ-ONLY reference — never commit upstream code
 openclaw-main/
+openclaw-main.zip
 
 # Large binary assets / reference docs (PDF, video) — not source code
 ref_doc/
@@ -37,6 +39,7 @@ ref_doc/
 
 # Design backup images (SSOT is dev/ui-ux/, not the backup)
 dev/ui-ux/concepts_backup/
+dev/ui-ux/Prompt_Brawl_Concept_Ref/
 
 # Agent / Claude local config and skills (per-machine)
 .agent/

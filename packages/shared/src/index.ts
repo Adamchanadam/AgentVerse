@@ -70,8 +70,6 @@ export {
 
 // E2E encryption (X25519 + HKDF-SHA-256 + XChaCha20-Poly1305)
 export {
-  initSodium,
-  getSodium,
   generateX25519Keypair,
   ed25519KeyToX25519,
   encryptMessage,

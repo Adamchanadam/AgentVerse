@@ -7,11 +7,10 @@
  * Spec: tasks.md 18.3
  */
 
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { bytesToHex } from "@noble/hashes/utils";
 import { eq } from "drizzle-orm";
 import {
-  initSodium,
   generateX25519Keypair,
   encryptMessage,
   decryptMessage,
@@ -35,10 +34,6 @@ describe("E2E: Encrypted messaging", () => {
   let agentB: AuthenticatedAgent;
   let pairId: string;
   let x25519B: X25519Keypair;
-
-  beforeAll(async () => {
-    await initSodium();
-  });
 
   beforeEach(async () => {
     hub = await createE2EHub();
