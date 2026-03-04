@@ -99,11 +99,7 @@ export class MatchStateMachine {
   onTrialsSettled(payload: TrialsSettledPayload): void {
     this._clearTurnTimer();
     this._setState("settled");
-    this.callbacks.onMatchResult(
-      payload.winner_agent_id,
-      payload.loser_agent_id,
-      "settlement",
-    );
+    this.callbacks.onMatchResult(payload.winner_agent_id, payload.loser_agent_id, "settlement");
   }
 
   /** Transition to reporting state (after verdict coordination) */

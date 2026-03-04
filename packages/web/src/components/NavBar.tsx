@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/agentdex", label: "AGENTDEX" },
   { href: "/pairings", label: "PAIRINGS" },
   { href: "/chat", label: "CHAT" },
+  { href: "/arena", label: "ARENA" },
 ] as const;
 
 export function NavBar() {

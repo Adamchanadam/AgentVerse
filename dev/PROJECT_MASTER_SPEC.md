@@ -671,13 +671,13 @@ interface TrialRule {
 
 ### 16.8 Client-side LLM Integration
 
-| 項目          | MVP 規格                                                     |
-| ------------- | ------------------------------------------------------------ |
-| LLM 呼叫位置  | Browser（client-side only）                                  |
-| API key 存放  | localStorage（never sent to Hub）                            |
-| Provider 介面 | `LlmProvider { generate(prompt, context): Promise<string> }` |
+| 項目          | MVP 規格                                                                                                    |
+| ------------- | ----------------------------------------------------------------------------------------------------------- |
+| LLM 呼叫位置  | Browser（client-side only）                                                                                 |
+| API key 存放  | localStorage（never sent to Hub）                                                                           |
+| Provider 介面 | `LlmProvider { generate(prompt, context): Promise<string> }`                                                |
 | MVP 實作      | `MinimaxProvider`（MiniMax M2.5 — OpenAI-compatible endpoint `https://api.minimax.io/v1/chat/completions`） |
-| Phase 2+      | 擴展至其他 providers、local models、OpenClaw plugin 整合     |
+| Phase 2+      | 擴展至其他 providers、local models、OpenClaw plugin 整合                                                    |
 
 ---
 

@@ -1,0 +1,234 @@
+/* Arena page — Prompt Brawl match screen */
+.container {
+  display: grid;
+  grid-template-columns: 280px 1fr 120px;
+  grid-template-rows: auto 1fr;
+  height: calc(100vh - 48px);
+}
+
+/* ── Status bar (full width) ────────────────────────── */
+.statusBar {
+  grid-column: 1 / -1;
+  padding: var(--spacing-base) calc(var(--spacing-base) * 2);
+  border-bottom: var(--border-thin) solid var(--border-white);
+  background: var(--surface-dark);
+  font-family: var(--font-display);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--spacing-base) * 2);
+  color: var(--text-primary-dim);
+}
+.statusRound {
+  color: var(--accent-cyan);
+}
+.statusTimer {
+  color: var(--accent-yellow);
+}
+.statusRule {
+  color: var(--accent-magenta);
+}
+.secureBadge {
+  color: var(--accent-green);
+  margin-left: auto;
+}
+
+/* ── Coach Console (left sidebar) ────────────────────── */
+.coachPanel {
+  border-right: var(--border-thin) solid var(--border-white);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.coachTitle {
+  font-family: var(--font-display);
+  font-size: 10px;
+  color: var(--accent-cyan);
+  padding: calc(var(--spacing-base) * 2);
+  border-bottom: 1px solid var(--border-white);
+}
+.coachArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-base);
+  gap: var(--spacing-base);
+  overflow-y: auto;
+}
+.coachTextarea {
+  flex: 1;
+  min-height: 80px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid var(--border-white);
+  color: var(--text-primary-light);
+  padding: var(--spacing-base);
+  resize: none;
+}
+.coachTextarea::placeholder {
+  color: var(--text-dimmed);
+}
+.coachTextarea:focus {
+  outline: 1px solid var(--accent-cyan);
+}
+.coachStatus {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dimmed);
+  padding: 0 var(--spacing-base);
+}
+
+/* ── Chat area (center) ──────────────────────────────── */
+.chatArea {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.messageLog {
+  flex: 1;
+  overflow-y: auto;
+  padding: calc(var(--spacing-base) * 2);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.selfMsg {
+  color: var(--accent-cyan);
+}
+.peerMsg {
+  color: var(--accent-yellow);
+}
+.systemMsg {
+  color: var(--text-dimmed);
+  font-style: italic;
+}
+
+/* ── Danger meter (right sidebar) ────────────────────── */
+.dangerPanel {
+  border-left: var(--border-thin) solid var(--border-white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: calc(var(--spacing-base) * 2);
+}
+
+/* ── Result overlay ──────────────────────────────────── */
+.resultOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  gap: calc(var(--spacing-base) * 3);
+}
+.victory {
+  animation: blink 0.5s step-end infinite;
+  color: var(--accent-green);
+  font-family: var(--font-display);
+  font-size: 20px;
+  text-align: center;
+}
+.defeat {
+  animation: blink 0.5s step-end infinite;
+  color: var(--accent-orange);
+  font-family: var(--font-display);
+  font-size: 20px;
+  text-align: center;
+}
+.resultXp {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-primary-dim);
+}
+.resultButtons {
+  display: flex;
+  gap: calc(var(--spacing-base) * 2);
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── API Key modal ───────────────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+}
+.modalContent {
+  background: var(--surface-dark);
+  border: var(--border-thin) solid var(--border-white);
+  padding: calc(var(--spacing-base) * 4);
+  max-width: 480px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing-base) * 2);
+}
+.modalTitle {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--accent-cyan);
+}
+.modalInput {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: transparent;
+  border: 1px solid var(--border-white);
+  color: var(--text-primary-light);
+  padding: var(--spacing-base);
+}
+.modalInput::placeholder {
+  color: var(--text-dimmed);
+}
+.modalInput:focus {
+  outline: 1px solid var(--accent-cyan);
+}
+.modalButtons {
+  display: flex;
+  gap: var(--spacing-base);
+  justify-content: flex-end;
+}
+.modalHint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dimmed);
+}
+
+/* ── Center helper / empty state ─────────────────────── */
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 48px);
+}
+
+/* ── Idle state (pre-match) ──────────────────────────── */
+.idleContainer {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: calc(var(--spacing-base) * 3);
+}
+.idleTitle {
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--accent-cyan);
+}
+.idleHint {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dimmed);
+}
