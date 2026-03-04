@@ -45,6 +45,19 @@ export class VerdictCoordinator {
     if (!verifyVerdictSignature(verdict, peerSig, this.config.peerPubKeyHex)) {
       throw new Error("Peer verdict signature verification failed");
     }
+    // If we already built our verdict, verify peer's matches
+    if (this._verdict) {
+      if (
+        verdict.match_id !== this._verdict.match_id ||
+        verdict.winner_agent_id !== this._verdict.winner_agent_id ||
+        verdict.loser_agent_id !== this._verdict.loser_agent_id ||
+        verdict.rule_id !== this._verdict.rule_id ||
+        verdict.trigger_event_id !== this._verdict.trigger_event_id ||
+        verdict.transcript_digest !== this._verdict.transcript_digest
+      ) {
+        throw new Error("Peer verdict does not match local verdict");
+      }
+    }
     this._peerSig = peerSig;
     if (!this._verdict) this._verdict = verdict;
     return this._tryAssemble();

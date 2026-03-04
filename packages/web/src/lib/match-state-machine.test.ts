@@ -51,7 +51,7 @@ describe("MatchStateMachine", () => {
   it("onTrialsStarted() transitions challenge_sent → in_progress", () => {
     const { machine, callbacks } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     expect(machine.state).toBe("in_progress");
     expect(machine.trialId).toBe("trial-1");
     expect(machine.rule).toEqual(RULE);
@@ -62,7 +62,7 @@ describe("MatchStateMachine", () => {
   it("onMessageSent() increments turnCount and rotates turn", () => {
     const { machine } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     expect(machine.turnCount).toBe(0);
     machine.onMessageSent();
     expect(machine.turnCount).toBe(1);
@@ -72,7 +72,7 @@ describe("MatchStateMachine", () => {
   it("onMessageReceived() with triggering text → judging", () => {
     const { machine, callbacks } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     machine.onMessageSent(); // my turn done
     const result = machine.onMessageReceived("hey hello there", "evt-1");
     expect(result?.triggered).toBe(true);
@@ -83,7 +83,7 @@ describe("MatchStateMachine", () => {
   it("onMessageReceived() with safe text → stays in_progress", () => {
     const { machine } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     machine.onMessageSent();
     const result = machine.onMessageReceived("hey there friend", "evt-2");
     expect(result?.triggered).toBe(false);
@@ -93,7 +93,7 @@ describe("MatchStateMachine", () => {
   it("turn timer fires → onTurnTimeout with forfeit agentId", () => {
     const { machine, callbacks } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     // It's my turn, so I should forfeit on timeout
     vi.advanceTimersByTime(30_001);
     expect(callbacks.onTurnTimeout).toHaveBeenCalledWith("agent-a");
@@ -103,7 +103,7 @@ describe("MatchStateMachine", () => {
   it("onTrialsSettled() transitions to settled", () => {
     const { machine, callbacks } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     const settled: TrialsSettledPayload = {
       trial_id: "trial-1",
       winner_agent_id: "agent-a",
@@ -119,7 +119,7 @@ describe("MatchStateMachine", () => {
   it("dispose() clears timers", () => {
     const { machine, callbacks } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     machine.dispose();
     vi.advanceTimersByTime(60_000);
     expect(callbacks.onTurnTimeout).not.toHaveBeenCalled();
@@ -136,7 +136,7 @@ describe("MatchStateMachine", () => {
   it("onVerdictSent() transitions judging → reporting", () => {
     const { machine, callbacks } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     machine.onMessageSent();
     machine.onMessageReceived("hey hello there", "evt-1"); // triggers judging
     expect(machine.state).toBe("judging");
@@ -148,7 +148,7 @@ describe("MatchStateMachine", () => {
   it("onVerdictSent() from non-judging state is no-op", () => {
     const { machine } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     expect(machine.state).toBe("in_progress");
     machine.onVerdictSent(); // no-op
     expect(machine.state).toBe("in_progress");
@@ -157,7 +157,7 @@ describe("MatchStateMachine", () => {
   it("peer turn timeout uses peerAgentId when not my turn", () => {
     const { machine, callbacks } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     machine.onMessageSent(); // now it's peer's turn
     expect(machine.isMyTurn).toBe(false);
     vi.advanceTimersByTime(30_001);
@@ -167,9 +167,16 @@ describe("MatchStateMachine", () => {
   it("onTrialsStarted() from idle state also transitions to in_progress", () => {
     const { machine } = createMachine();
     // No challenge() call — direct from idle
-    machine.onTrialsStarted("trial-2", RULE);
+    machine.onTrialsStarted("trial-2", RULE, "agent-a");
     expect(machine.state).toBe("in_progress");
     expect(machine.trialId).toBe("trial-2");
+  });
+
+  it("onTrialsStarted() with peer as challenger sets isMyTurn=false", () => {
+    const { machine } = createMachine();
+    machine.onTrialsStarted("trial-3", RULE, "agent-b"); // peer is challenger
+    expect(machine.state).toBe("in_progress");
+    expect(machine.isMyTurn).toBe(false);
   });
 
   it("onMessageReceived() returns null when not in_progress", () => {
@@ -182,7 +189,7 @@ describe("MatchStateMachine", () => {
   it("turnCount increments on both sent and received messages", () => {
     const { machine } = createMachine();
     machine.challenge();
-    machine.onTrialsStarted("trial-1", RULE);
+    machine.onTrialsStarted("trial-1", RULE, "agent-a");
     expect(machine.turnCount).toBe(0);
     machine.onMessageSent();
     expect(machine.turnCount).toBe(1);

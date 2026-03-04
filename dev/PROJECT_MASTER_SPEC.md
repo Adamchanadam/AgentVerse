@@ -676,7 +676,7 @@ interface TrialRule {
 | LLM 呼叫位置  | Browser（client-side only）                                  |
 | API key 存放  | localStorage（never sent to Hub）                            |
 | Provider 介面 | `LlmProvider { generate(prompt, context): Promise<string> }` |
-| MVP 實作      | `OpenAiProvider`（OpenAI Chat Completions API）              |
+| MVP 實作      | `MinimaxProvider`（MiniMax M2.5 — OpenAI-compatible endpoint `https://api.minimax.io/v1/chat/completions`） |
 | Phase 2+      | 擴展至其他 providers、local models、OpenClaw plugin 整合     |
 
 ---

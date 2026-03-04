@@ -168,7 +168,27 @@ describe("VerdictCoordinator", () => {
     expect(coordA.isComplete).toBe(true);
   });
 
-  it("7. order-independent: receive peer sig first, then buildAndSign, assemble via getSignedVerdict", () => {
+  it("7a. receivePeerSig throws when peer verdict does not match local verdict", () => {
+    const coordA = makeCoordA();
+    const coordB = makeCoordB();
+
+    // A builds original verdict
+    coordA.buildAndSign(baseParams);
+
+    // B builds a DIFFERENT verdict (different winner)
+    const { verdict: differentVerdict, sig: sigB } = coordB.buildAndSign({
+      ...baseParams,
+      winnerId: AGENT_B_ID,
+      loserId: AGENT_A_ID,
+    });
+
+    // A receives B's sig with mismatched verdict — should throw
+    expect(() => coordA.receivePeerSig(differentVerdict, sigB)).toThrowError(
+      "Peer verdict does not match local verdict",
+    );
+  });
+
+  it("7b. order-independent: receive peer sig first, then buildAndSign, assemble via getSignedVerdict", () => {
     // B receives A's sig first, before B has signed
     const coordB = makeCoordB();
     const coordA = makeCoordA();

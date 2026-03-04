@@ -59,11 +59,11 @@ export class MatchStateMachine {
   }
 
   /** Hub sent trials.started → challenge_sent→in_progress */
-  onTrialsStarted(trialId: string, rule: TrialRule): void {
+  onTrialsStarted(trialId: string, rule: TrialRule, challengerAgentId: string): void {
     if (this._state !== "challenge_sent" && this._state !== "idle") return;
     this._trialId = trialId;
     this._rule = rule;
-    this._isMyTurn = true; // Challenger goes first
+    this._isMyTurn = challengerAgentId === this.config.myAgentId;
     this._setState("in_progress");
     this._startTurnTimer();
   }
