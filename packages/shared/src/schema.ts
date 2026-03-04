@@ -35,6 +35,10 @@ export const EventTypeSchema = z.enum([
   "pair.approved",
   "pair.revoked",
   "msg.relay",
+  "trials.created",
+  "trials.started",
+  "trials.reported",
+  "trials.settled",
 ]);
 
 // ---------------------------------------------------------------------------
@@ -74,12 +78,67 @@ export const MsgRelayPayloadSchema = z.object({
   ephemeral_pubkey: z.string(),
 });
 
+// ─── Trial Schemas (Phase 2 — Prompt Brawl) ──────────────────
+
+export const TrialRuleTypeSchema = z.enum(["forbidden_word", "regex"]);
+
+export const TrialRuleSchema = z.object({
+  id: z.string(),
+  type: TrialRuleTypeSchema,
+  pattern: z.string(),
+  display_hint: z.string(),
+  difficulty: z.number().int().min(1).max(5),
+});
+
+export const VerdictSchema = z.object({
+  match_id: z.string(),
+  winner_agent_id: z.string(),
+  loser_agent_id: z.string(),
+  rule_id: z.string(),
+  trigger_event_id: z.string(),
+  transcript_digest: z.string(),
+});
+
+export const SignedVerdictSchema = z.object({
+  verdict: VerdictSchema,
+  sig_winner: z.string(),
+  sig_loser: z.string(),
+});
+
+export const TrialsCreatedPayloadSchema = z.object({
+  pair_id: z.string(),
+  rule_id: z.string(),
+  seed: z.string(),
+});
+
+export const TrialsStartedPayloadSchema = z.object({
+  trial_id: z.string(),
+  rule_payload: TrialRuleSchema,
+});
+
+export const TrialsReportedPayloadSchema = z.object({
+  trial_id: z.string(),
+  signed_verdict: SignedVerdictSchema,
+});
+
+export const TrialsSettledPayloadSchema = z.object({
+  trial_id: z.string(),
+  winner_agent_id: z.string(),
+  loser_agent_id: z.string(),
+  xp_winner: z.number().int(),
+  xp_loser: z.number().int(),
+});
+
 export const EventPayloadSchema = z.union([
   AgentCardPayloadSchema,
   PairRequestedPayloadSchema,
   PairApprovedPayloadSchema,
   PairRevokedPayloadSchema,
   MsgRelayPayloadSchema,
+  TrialsCreatedPayloadSchema,
+  TrialsStartedPayloadSchema,
+  TrialsReportedPayloadSchema,
+  TrialsSettledPayloadSchema,
 ]);
 
 // ---------------------------------------------------------------------------
@@ -106,6 +165,10 @@ export const payloadSchemaByType = {
   "pair.approved": PairApprovedPayloadSchema,
   "pair.revoked": PairRevokedPayloadSchema,
   "msg.relay": MsgRelayPayloadSchema,
+  "trials.created": TrialsCreatedPayloadSchema,
+  "trials.started": TrialsStartedPayloadSchema,
+  "trials.reported": TrialsReportedPayloadSchema,
+  "trials.settled": TrialsSettledPayloadSchema,
 } as const;
 
 type EventTypeKey = keyof typeof payloadSchemaByType;

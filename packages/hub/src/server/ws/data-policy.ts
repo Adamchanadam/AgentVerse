@@ -57,6 +57,28 @@ const MSG_RELAY_FIELDS: FieldPolicy = {
   required: new Set(["pair_id", "ciphertext", "ephemeral_pubkey"]),
 };
 
+// ─── Trial event field policies (Phase 2 — Prompt Brawl) ────
+
+const TRIALS_CREATED_FIELDS: FieldPolicy = {
+  allowed: new Set(["pair_id", "rule_id", "seed"]),
+  required: new Set(["pair_id", "rule_id", "seed"]),
+};
+
+const TRIALS_STARTED_FIELDS: FieldPolicy = {
+  allowed: new Set(["trial_id", "rule_payload"]),
+  required: new Set(["trial_id", "rule_payload"]),
+};
+
+const TRIALS_REPORTED_FIELDS: FieldPolicy = {
+  allowed: new Set(["trial_id", "signed_verdict"]),
+  required: new Set(["trial_id", "signed_verdict"]),
+};
+
+const TRIALS_SETTLED_FIELDS: FieldPolicy = {
+  allowed: new Set(["trial_id", "winner_agent_id", "loser_agent_id", "xp_winner", "xp_loser"]),
+  required: new Set(["trial_id", "winner_agent_id", "loser_agent_id", "xp_winner", "xp_loser"]),
+};
+
 const POLICY_MAP: ReadonlyMap<EventType, FieldPolicy> = new Map<EventType, FieldPolicy>([
   ["agent.registered", AGENT_CARD_FIELDS],
   ["agent.updated", AGENT_CARD_FIELDS],
@@ -64,13 +86,22 @@ const POLICY_MAP: ReadonlyMap<EventType, FieldPolicy> = new Map<EventType, Field
   ["pair.approved", PAIR_APPROVED_FIELDS],
   ["pair.revoked", PAIR_REVOKED_FIELDS],
   ["msg.relay", MSG_RELAY_FIELDS],
+  ["trials.created", TRIALS_CREATED_FIELDS],
+  ["trials.started", TRIALS_STARTED_FIELDS],
+  ["trials.reported", TRIALS_REPORTED_FIELDS],
+  ["trials.settled", TRIALS_SETTLED_FIELDS],
 ]);
 
 /**
  * Fields exempt from path-separator checking (binary/opaque data).
  * These only have length checked against MAX_CIPHERTEXT_LEN.
  */
-const PATH_CHECK_EXEMPT = new Set(["ciphertext", "ephemeral_pubkey"]);
+const PATH_CHECK_EXEMPT = new Set([
+  "ciphertext",
+  "ephemeral_pubkey",
+  "signed_verdict",
+  "rule_payload",
+]);
 
 // ─── Helpers ────────────────────────────────────────────────
 

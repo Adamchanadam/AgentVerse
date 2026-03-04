@@ -9,7 +9,9 @@ import {
   events,
   genePacks,
   lineageEvents,
-  trialsReports,
+  trials,
+  trialResults,
+  agentStats,
   offlineMessages,
 } from "./schema.js";
 
@@ -72,11 +74,39 @@ describe("drizzle schema exports", () => {
     expect(lineageEvents.childGenepack).toBeDefined();
   });
 
-  it("trialsReports has expected columns", () => {
-    expect(trialsReports.id).toBeDefined();
-    expect(trialsReports.agentId).toBeDefined();
-    expect(trialsReports.passRate).toBeDefined();
-    expect(trialsReports.averageScore).toBeDefined();
+  it("trials has expected columns", () => {
+    expect(trials.id).toBeDefined();
+    expect(trials.pairId).toBeDefined();
+    expect(trials.ruleId).toBeDefined();
+    expect(trials.rulePayload).toBeDefined();
+    expect(trials.seed).toBeDefined();
+    expect(trials.status).toBeDefined();
+    expect(trials.createdBy).toBeDefined();
+    expect(trials.createdAt).toBeDefined();
+    expect(trials.startedAt).toBeDefined();
+    expect(trials.settledAt).toBeDefined();
+  });
+
+  it("trialResults has expected columns", () => {
+    expect(trialResults.id).toBeDefined();
+    expect(trialResults.trialId).toBeDefined();
+    expect(trialResults.winnerAgentId).toBeDefined();
+    expect(trialResults.loserAgentId).toBeDefined();
+    expect(trialResults.ruleId).toBeDefined();
+    expect(trialResults.triggerEventId).toBeDefined();
+    expect(trialResults.transcriptDigest).toBeDefined();
+    expect(trialResults.sigWinner).toBeDefined();
+    expect(trialResults.sigLoser).toBeDefined();
+    expect(trialResults.xpWinner).toBeDefined();
+    expect(trialResults.xpLoser).toBeDefined();
+  });
+
+  it("agentStats has expected columns", () => {
+    expect(agentStats.agentId).toBeDefined();
+    expect(agentStats.wins).toBeDefined();
+    expect(agentStats.losses).toBeDefined();
+    expect(agentStats.xp).toBeDefined();
+    expect(agentStats.updatedAt).toBeDefined();
   });
 
   it("offlineMessages has expected columns", () => {

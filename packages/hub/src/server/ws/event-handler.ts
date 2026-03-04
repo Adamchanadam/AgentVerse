@@ -15,16 +15,23 @@
  * Spec: tasks.md Task 7 sub-task 4 (7.2 event handler)
  */
 
-import { verifyEnvelope, type EventEnvelope, type SubmitResultFrame } from "@agentverse/shared";
+import {
+  verifyEnvelope,
+  TRIAL_RULES,
+  type EventEnvelope,
+  type SubmitResultFrame,
+} from "@agentverse/shared";
 import type { EventRepository } from "../../db/repositories/event.repository.js";
 import type { AgentRepository } from "../../db/repositories/agent.repository.js";
 import type { PairingRepository } from "../../db/repositories/pairing.repository.js";
+import type { TrialsRepository } from "../../db/repositories/trials.repository.js";
 import { validatePayload } from "./data-policy.js";
 
 export interface EventHandlerDeps {
   eventRepo: EventRepository;
   agentRepo: AgentRepository;
   pairingRepo: PairingRepository;
+  trialsRepo?: TrialsRepository;
 }
 
 export async function handleSubmitEvent(
@@ -177,6 +184,40 @@ async function validatePairingOp(
       }
       break;
     }
+    case "trials.created": {
+      // Verify sender agent exists
+      const senderAgent = await deps.agentRepo.findByPubkey(envelope.sender_pubkey);
+      if (!senderAgent) {
+        return {
+          event_id: envelope.event_id,
+          result_ts: now,
+          status: "rejected",
+          error: { code: "trial_sender_not_found", message: "Sender agent not registered" },
+        };
+      }
+      // Verify pair_id exists and status=active
+      const pairId = payload.pair_id as string;
+      const pairing = await deps.pairingRepo.findById(pairId);
+      if (!pairing || pairing.status !== "active") {
+        return {
+          event_id: envelope.event_id,
+          result_ts: now,
+          status: "rejected",
+          error: { code: "trial_pair_invalid", message: "Pairing not found or not active" },
+        };
+      }
+      // Verify rule_id is valid
+      const ruleId = payload.rule_id as string;
+      if (!TRIAL_RULES.some((r) => r.id === ruleId)) {
+        return {
+          event_id: envelope.event_id,
+          result_ts: now,
+          status: "rejected",
+          error: { code: "trial_rule_invalid", message: `Unknown rule_id: ${ruleId}` },
+        };
+      }
+      break;
+    }
   }
 
   return null;
@@ -223,6 +264,19 @@ async function applyEventSideEffects(
       const pairing = await deps.pairingRepo.findById(pairId);
       if (pairing && pairing.status !== "revoked") {
         await deps.pairingRepo.transitionStatus(pairId, pairing.status, "revoked");
+      }
+      break;
+    }
+    case "trials.created": {
+      if (deps.trialsRepo) {
+        const senderAgent = (await deps.agentRepo.findByPubkey(envelope.sender_pubkey))!;
+        await deps.trialsRepo.createTrial({
+          pairId: payload.pair_id as string,
+          ruleId: payload.rule_id as string,
+          rulePayload: (payload.rule_payload as Record<string, unknown>) ?? {},
+          seed: payload.seed as string,
+          createdBy: senderAgent.id,
+        });
       }
       break;
     }

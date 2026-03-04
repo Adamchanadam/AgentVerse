@@ -31,7 +31,12 @@ import { AgentRepository } from "../../db/repositories/agent.repository.js";
 import { EventRepository } from "../../db/repositories/event.repository.js";
 import { PairingRepository } from "../../db/repositories/pairing.repository.js";
 import { OfflineMessageRepository } from "../../db/repositories/offline-message.repository.js";
+import { TrialsRepository } from "../../db/repositories/trials.repository.js";
+import { TrialResultsRepository } from "../../db/repositories/trial-results.repository.js";
+import { AgentStatsRepository } from "../../db/repositories/agent-stats.repository.js";
+import { settleTrialReport, type SettlementDeps } from "./settlement-handler.js";
 import type { Event } from "../../db/schema.js";
+import type { SignedVerdict } from "@agentverse/shared";
 
 // ─── Constants ────────────────────────────────────────────────
 const PING_INTERVAL_MS = 30_000;
@@ -76,6 +81,7 @@ async function wsPluginImpl(app: FastifyInstance): Promise<void> {
   // Per-operation rate limiters (per Fastify instance for test isolation)
   const agentCardLimiter = new SlidingWindowLimiter(10, 60_000); // 10/min
   const pairingLimiter = new SlidingWindowLimiter(30, 3_600_000); // 30/hr
+  const trialsLimiter = new SlidingWindowLimiter(10, 3_600_000); // 10/hr
 
   await app.register(websocket);
 
@@ -92,6 +98,9 @@ async function wsPluginImpl(app: FastifyInstance): Promise<void> {
     const eventRepo = new EventRepository(app.db);
     const pairingRepo = new PairingRepository(app.db);
     const offlineMsgRepo = new OfflineMessageRepository(app.db);
+    const trialsRepo = new TrialsRepository(app.db);
+    const trialResultsRepo = new TrialResultsRepository(app.db);
+    const agentStatsRepo = new AgentStatsRepository(app.db);
 
     // 1. Send challenge
     sendFrame(socket, { type: "challenge", nonce });
@@ -292,6 +301,24 @@ async function wsPluginImpl(app: FastifyInstance): Promise<void> {
         }
       }
 
+      if (envelope.event_type.startsWith("trials.")) {
+        if (!trialsLimiter.tryAcquire(agentId)) {
+          sendFrame(socket, {
+            type: "submit_result",
+            payload: {
+              event_id: envelope.event_id,
+              result_ts: new Date().toISOString(),
+              status: "rejected",
+              error: {
+                code: "rate_limit_exceeded",
+                message: "Trials rate limit exceeded (10/hr)",
+              },
+            },
+          });
+          return;
+        }
+      }
+
       let resultFrame;
 
       if (envelope.event_type === "msg.relay") {
@@ -307,11 +334,56 @@ async function wsPluginImpl(app: FastifyInstance): Promise<void> {
           eventRepo,
           agentRepo,
           pairingRepo,
+          trialsRepo,
         });
       }
 
       // Send result back to sender
       sendFrame(socket, { type: "submit_result", payload: resultFrame });
+
+      // Handle trials.reported settlement
+      if (envelope.event_type === "trials.reported" && resultFrame.status === "accepted") {
+        const payload = envelope.payload as unknown as Record<string, unknown>;
+        const signedVerdict = payload.signed_verdict as unknown as SignedVerdict;
+        if (signedVerdict) {
+          const settlementDeps: SettlementDeps = {
+            trialsRepo,
+            trialResultsRepo,
+            agentStatsRepo,
+            getAgentPubkey: async (id: string) => {
+              const agent = await agentRepo.findById(id);
+              return agent?.pubkey ?? null;
+            },
+          };
+          const settlement = await settleTrialReport(signedVerdict, settlementDeps);
+          if (settlement.ok) {
+            // Broadcast trials.settled to both agents
+            const settledPayload = {
+              trial_id: settlement.trialId,
+              winner_agent_id: settlement.winnerId,
+              loser_agent_id: settlement.loserId,
+              xp_winner: settlement.xpWinner,
+              xp_loser: settlement.xpLoser,
+            };
+            const settledFrame: WsFrame = {
+              type: "event",
+              payload: {
+                event_id: crypto.randomUUID(),
+                event_type: "trials.settled" as EventType,
+                ts: new Date().toISOString(),
+                sender_pubkey: "hub",
+                recipient_ids: [settlement.winnerId, settlement.loserId],
+                nonce: "",
+                sig: "",
+                payload: settledPayload as unknown as EventPayload,
+              },
+              server_seq: resultFrame.server_seq ?? "0",
+            };
+            connections.sendTo(settlement.winnerId, settledFrame);
+            connections.sendTo(settlement.loserId, settledFrame);
+          }
+        }
+      }
 
       // Forward to recipient(s) if accepted
       if (resultFrame.status === "accepted") {

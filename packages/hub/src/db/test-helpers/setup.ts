@@ -76,18 +76,40 @@ const CREATE_TABLES_SQL = `
     created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
-  CREATE TABLE IF NOT EXISTS trials_reports (
-    id            TEXT PRIMARY KEY,
-    agent_id      TEXT NOT NULL REFERENCES agents(id),
-    trial_pack_id TEXT NOT NULL,
-    version       TEXT NOT NULL,
-    pass_rate     REAL NOT NULL,
-    average_score REAL NOT NULL,
-    pack_hash     TEXT NOT NULL,
-    report_sig    TEXT NOT NULL,
-    dimensions    JSONB NOT NULL DEFAULT '{}',
-    stable        BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  CREATE TABLE IF NOT EXISTS trials (
+    id          TEXT PRIMARY KEY,
+    pair_id     TEXT NOT NULL REFERENCES pairings(id),
+    rule_id     TEXT NOT NULL,
+    rule_payload JSONB NOT NULL DEFAULT '{}',
+    seed        TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'created',
+    created_by  TEXT NOT NULL REFERENCES agents(id),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    started_at  TIMESTAMPTZ,
+    settled_at  TIMESTAMPTZ
+  );
+
+  CREATE TABLE IF NOT EXISTS trial_results (
+    id                TEXT PRIMARY KEY,
+    trial_id          TEXT NOT NULL UNIQUE REFERENCES trials(id),
+    winner_agent_id   TEXT NOT NULL REFERENCES agents(id),
+    loser_agent_id    TEXT NOT NULL REFERENCES agents(id),
+    rule_id           TEXT NOT NULL,
+    trigger_event_id  TEXT NOT NULL,
+    transcript_digest TEXT NOT NULL,
+    sig_winner        TEXT NOT NULL,
+    sig_loser         TEXT NOT NULL,
+    xp_winner         INTEGER NOT NULL DEFAULT 100,
+    xp_loser          INTEGER NOT NULL DEFAULT 25,
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE TABLE IF NOT EXISTS agent_stats (
+    agent_id   TEXT PRIMARY KEY REFERENCES agents(id),
+    wins       INTEGER NOT NULL DEFAULT 0,
+    losses     INTEGER NOT NULL DEFAULT 0,
+    xp         INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   );
 
   CREATE TABLE IF NOT EXISTS offline_messages (

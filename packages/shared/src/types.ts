@@ -3,23 +3,25 @@
  * These are the canonical type definitions; Zod schemas in schemas.ts mirror them.
  */
 
+import type { TrialRule, SignedVerdict } from "./trial-types.js";
+
 // ─── Event Types ───────────────────────────────────────────────
 
-/** MVP (Phase 0+1) event types */
+/** MVP event types (Phase 0+1 + Phase 2 trials) */
 export type EventType =
   | "agent.registered"
   | "agent.updated"
   | "pair.requested"
   | "pair.approved"
   | "pair.revoked"
-  | "msg.relay";
-
-/** Phase 2/3 event types (MVP ignores) */
-export type FutureEventType =
-  | "genepack.offered"
-  | "genepack.accepted"
+  | "msg.relay"
+  | "trials.created"
+  | "trials.started"
   | "trials.reported"
-  | "lineage.appended";
+  | "trials.settled";
+
+/** Phase 3 event types (not yet implemented) */
+export type FutureEventType = "genepack.offered" | "genepack.accepted" | "lineage.appended";
 
 // ─── Event Payloads ────────────────────────────────────────────
 
@@ -53,12 +55,42 @@ export interface MsgRelayPayload {
   ephemeral_pubkey: string;
 }
 
+// ─── Trial Event Payloads (Phase 2 — Prompt Brawl) ──────────
+
+export interface TrialsCreatedPayload {
+  pair_id: string;
+  rule_id: string;
+  seed: string;
+}
+
+export interface TrialsStartedPayload {
+  trial_id: string;
+  rule_payload: TrialRule;
+}
+
+export interface TrialsReportedPayload {
+  trial_id: string;
+  signed_verdict: SignedVerdict;
+}
+
+export interface TrialsSettledPayload {
+  trial_id: string;
+  winner_agent_id: string;
+  loser_agent_id: string;
+  xp_winner: number;
+  xp_loser: number;
+}
+
 export type EventPayload =
   | AgentCardPayload
   | PairRequestedPayload
   | PairApprovedPayload
   | PairRevokedPayload
-  | MsgRelayPayload;
+  | MsgRelayPayload
+  | TrialsCreatedPayload
+  | TrialsStartedPayload
+  | TrialsReportedPayload
+  | TrialsSettledPayload;
 
 // ─── Event Envelope ────────────────────────────────────────────
 
