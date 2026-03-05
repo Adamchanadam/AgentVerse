@@ -2,20 +2,29 @@
 
 ## Current Baseline
 
-1. Version: Pre-alpha（Phase 1.5 完成 + Phase 2 Batch A/B/C 完成：Prompt Brawl 後端 + Browser Trials Runner + Arena UI）
-2. Core commands / features: AgentVerse — OpenClaw Agent 社群＋遊戲化成長＋DNA 交換平台
+1. Version: Pre-alpha Sprint 1（Phase 1.5 + Phase 2 完成，Sprint 0 可玩性測試通過）
+2. Core commands / features: AgentVerse — AI Agent 社交遊戲平台（純 Fun Layer：Prompt Brawl PvP + 社交）
 3. Regression baseline: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check` 全綠
-4. Release / merge status: `phase2-batch-b-trials-runner` branch ready for PR → `main`
-5. Active branch / environment: `phase2-batch-b-trials-runner` branch @ `D:\_Adam_Projects\AgentVerse`
-6. External platforms / dependencies in scope: OpenClaw（openclaw-main/ 為參考 codebase）、PostgreSQL、Neon（可選）、React/Next.js、Fastify
+4. Release / merge status: `main` branch @ commit `9e0fba7`（Sprint 0 fixes merged）
+5. Active branch / environment: `main` branch @ `D:\_Adam_Projects\AgentVerse`
+6. External platforms / dependencies in scope: OpenClaw（openclaw-main/ 為參考 codebase）、PostgreSQL、React/Next.js、Fastify、MiniMax M2.5 LLM（BYOK）
 7. Conda environment: `adamlab4_env`（Node v22.14.0、npm 10.9.2、pnpm 9.15.4）
+
+## 產品轉向記錄（2026-03-05 決策）
+
+**原方向**：社群＋遊戲化成長＋DNA 交換平台
+**新方向**：AI Agent 社交遊戲平台（純 Fun Layer）
+**原因**：GenePack 實際用途不足、開發過於 spec-heavy、多個 session 未產出可玩 demo
+**凍結範圍**：GenePack exchange, Growth Layer, Local Trials Runner, ability tree, Lineage
+**保留範圍**：Prompt Brawl PvP, AgentDex, Pairings, Chat, Arena, XP/badges/leaderboard
+**開發模式**：Waterfall spec → Sprint 制（Sprint → 可玩 Demo → 人手測試 → 發現問題 → 下一 Sprint）
 
 ## Layer Map
 
-1. Product / System Layer: AgentVerse Hub + OpenClaw Channel Plugin `agentverse` + Local Trials Runner
-2. Development Governance Layer: AGENTS.md 治理框架 + Kiro spec-driven workflow
-3. Current task belongs to which layer: Product（**Phase 2 Batch A/B/C/D 完成 ✅**；624/624 tests，82 files）
-4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格已對齊 v2026.3.1 官方 codebase（Session 38 修正 9 項 misalignment + Session 39 深度審計修正 7 項）；持續監控後續版本變化
+1. Product / System Layer: AgentVerse Hub + Web UI（Prompt Brawl PvP 社交遊戲）+ OpenClaw Channel Plugin `agentverse`
+2. Development Governance Layer: AGENTS.md 治理框架 + Sprint 制開發
+3. Current task belongs to which layer: Product（**Sprint 1：雙人 PvP 端到端驗證**；624/624 tests，82 files）
+4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格已對齊 v2026.3.1 官方 codebase；持續監控後續版本變化
 
 ## Mandatory Start Checklist
 
@@ -34,20 +43,23 @@
 
 ## Open Priorities
 
-1. **Phase 1.5：Web-First Usability ✅ 完成**（Task 20-24，507 tests）
-2. **Phase 2.0 Prompt Brawl — Batch A/B/C ✅ 完成**（Task 25-27，615 tests）：
-   - Task 25：Match Orchestration ✅（558 tests — types, schema, rules, repos, settlement, E2E）
-   - Task 26：Browser Trials Runner ✅（609 tests — state machine, LLM provider, digest chain, verdict coordinator）
-   - Task 27：Arena UI ✅（615 tests — Arena page, DangerMeter, AgentDex challenge, Codex review fixes）
-   - 2 Codex reviews completed（12 findings: 10 fixed, 2 deferred by design）
-3. **Phase 2.0 Batch D — Progression ✅ 完成**（Task 28，624 tests）：
-   - 28.1：XP calculation + GET /api/agents/:id/stats endpoint ✅
-   - 28.2：Badge system (grant logic in settlement handler) ✅
-   - 28.3：AgentDex stats display (XP level + badge icons) ✅
-   - 28.4：LLM Provider settings page (MiniMax API key management) ✅
-   - 28.5：Phase 2.0 Checkpoint ✅
-4. **Phase 3 Backlog**：B3 GenePack 交換（三種類型 skill/trait/knowledge，schema 已修正對齊 §17）、B4 Lineage、B5 Fusion Lab
-5. **Phase 2+ 建議**：Security headers、scope-based middleware、Redis NonceStore、Elo rating
+### Sprint Backlog（Sprint 制，以可玩 Demo 為目標）
+
+1. **Sprint 0 ✅ 完成**（2026-03-05）：Docker 跑起來，單人流程跑通，修復 4 個 blocking bug
+2. **Sprint 1 🔄 進行中**：雙人 PvP 端到端對戰 + 文檔全面對齊
+3. **Sprint 2（待定）**：根據 Sprint 1 人手測試結果決定
+
+### 已完成里程碑（參考）
+
+- Phase 1.5：Web-First Usability ✅（Task 20-24，507 tests）
+- Phase 2.0 Prompt Brawl ✅（Task 25-28，624 tests）
+- Sprint 0 ✅（4 bug fixes，所有頁面可用）
+
+### 凍結 Backlog [FROZEN — 2026-03-05 決策]
+
+- ~~Phase 3~~：GenePack 交換、Lineage、Fusion Lab — **凍結**
+- ~~Growth Layer~~：能力樹、知識領域成長 — **凍結**
+- ~~Local Trials Runner~~：本地評測工具 — **凍結**
 
 ## Known Risks / Blockers
 
@@ -151,18 +163,16 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 ## Last Session Record
 
 1. UTC date: 2026-03-05
-2. Session ID: Claude_20260305_2000
+2. Session ID: Claude_20260305_2300
 3. Completed:
-   - **Task 25-27 (Batch A/B/C)** ✅ — Prompt Brawl backend + browser trials runner + Arena UI (615 tests)
-   - **Task 28 (Batch D) Progression** ✅ — XP calculation, badge system, AgentDex stats display, LLM settings page (624 tests)
-   - **INC-20260305 GenePack Correction** — 4-task systematic fix across 12+ files + governance hardening (AGENTS.md §1b-d)
-   - **Full document audit** — 4 parallel auditors, 7 ISSUES + 5 AMBIGUOUS found, all ISSUES fixed
-   - **Codex governance** — Created `dev/CODEX_BRIEFING.md`, verified via simulation (12/12 correct)
-4. Pending: Branch `phase2-batch-b-trials-runner` ready for PR → `main`
+   - **產品轉向決策** — 「社群＋遊戲化成長＋DNA 交換」→「AI Agent 社交遊戲平台」（純 Fun Layer）
+   - **Sprint 0** ✅ — Docker 部署 + 端到端可玩性測試 + 4 bug fixes（624 tests）
+   - **Sprint 1 文檔對齊** — 所有治理文件更新為新定位
+4. Pending: Sprint 1 技術驗證（雙人 PvP 端到端對戰）
 5. Next priorities (max 3):
-   - PR: `phase2-batch-b-trials-runner` → `main`
-   - Phase 3 planning (GenePack exchange, Lineage, Fusion Lab)
-   - Security hardening (scope middleware, Redis NonceStore)
+   - 完成 Sprint 1：雙人 PvP 端到端對戰驗證
+   - Sprint 2：根據人手測試結果決定
+   - Security hardening（延後到穩定後）
 6. Risks / blockers:
    - TTL-mode catchup 未 JOIN offline_messages（不影響目前功能）
    - Agent scope 尚未強制權限隔離（延後至 Phase 2+）

@@ -51,24 +51,28 @@ Codex is a **Product Advisor ONLY**. The following areas are **outside Codex's s
 
 ---
 
-## 2. Platform Philosophy (LOCKED — AGENTS.md §1d)
+## 2. Platform Philosophy (UPDATED — 2026-03-05 Pivot)
 
-> **AgentVerse = Agent 的訓練學院 / 興趣班**
+> **AgentVerse = AI Agent 社交遊戲平台（純 Fun Layer）**
 
-- Platform activities (battles, chat, social, trials) = **fun vehicle** (刺激手段)
-- Game scores (XP, badges, leaderboards) = **stimulation** (激勵)
-- **Real purpose** = Agent capability, personality, knowledge **genuinely improve**
-- Agent returns to owner's daily work with **practical contributions and value**
-- Different owners have different growth direction expectations (professional tools, diverse knowledge, life support, etc.)
+- Core gameplay: **Prompt Brawl PvP** — human coach + AI agent battle
+- Social features: AgentDex, Pairings, Chat, Arena, Leaderboard
+- Game scores (XP, badges, leaderboards) = engagement + social proof
+- Development model: **Sprint → Playable Demo → Manual Testing → Fix → Next Sprint**
 
-### Two Independent Layers
+### Active Layer
 
 | Layer            | Components                                               | Purpose                             |
 | ---------------- | -------------------------------------------------------- | ----------------------------------- |
 | **Fun Layer**    | Prompt Brawl, XP, badges, leaderboards, win/loss records | Engagement, retention, social proof |
-| **Growth Layer** | GenePack exchange, capability radar, ability tree        | Real Agent capability improvement   |
 
-These layers are **independent but coexisting**. Fun Layer metrics (XP) do NOT equate to Growth Layer progress (GenePack capabilities).
+### [FROZEN] Growth Layer (2026-03-05 Decision)
+
+| Layer            | Components                                               | Status  |
+| ---------------- | -------------------------------------------------------- | ------- |
+| ~~Growth Layer~~ | ~~GenePack exchange, capability radar, ability tree~~    | FROZEN  |
+
+**Reason**: GenePack exchange has insufficient practical utility. Skill (ClawHub already does it), trait (owners configure directly), knowledge (just markdown files). Development was too spec-heavy without producing playable demos.
 
 ---
 

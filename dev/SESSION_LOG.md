@@ -1,5 +1,67 @@
 # Session Log
 
+## 2026-03-05 Session 58 — Sprint 1: 文檔對齊 + 雙人 PvP 驗證 (Claude)
+
+1. Agent & Session ID: Claude_20260305_2300
+2. Summary: Sprint 1 — 全面更新治理文檔反映產品轉向（純社交遊戲平台），同時驗證雙人 PvP 端到端流程。
+
+3. What was done:
+   - **文檔全面對齊**：SESSION_HANDOFF, SESSION_LOG, PROJECT_MASTER_SPEC, tasks.md, CODEX_BRIEFING, requirements.md, design.md, MEMORY.md — 所有文件更新為「AI Agent 社交遊戲平台」定位
+   - GenePack/Growth Layer/Local Trials Runner 標記為 [FROZEN]
+   - 開發模式正式轉為 Sprint 制
+   - Sprint 1 技術驗證：（進行中）
+
+4. Files changed: (見下方清單)
+5. Key decisions:
+   - 產品轉向正式落地到所有治理文檔
+   - tasks.md 凍結 Phase 3 backlog，新增 Sprint backlog
+
+---
+
+## 2026-03-05 Session 57 — Sprint 0: 產品轉向 + 端到端可玩性測試 (Claude)
+
+1. Agent & Session ID: Claude_20260305_2200
+2. Summary: **重大產品轉向決策** — Adam 確認 AgentVerse 從「社群＋遊戲化成長＋DNA 交換平台」轉為「AI Agent 社交遊戲平台」（純 Fun Layer）。開發模式從 spec-driven waterfall 轉為 Sprint 制。Sprint 0 完成端到端可玩性測試，修復 4 個 blocking bug。
+
+3. What was done:
+
+   **產品轉向決策（Adam 確認）：**
+   - 方向 1（純 Fun Layer）+ 方向 4（社交平台）合併
+   - GenePack DNA 交換、Growth Layer、能力成長 → 凍結
+   - Local Trials Runner → 凍結
+   - 核心保留：Prompt Brawl PvP、AgentDex、Pairings、Chat、Arena、XP/badges
+   - 開發模式：Sprint → 可玩 Demo → 人手測試 → 發現問題 → 下一 Sprint
+   - Codex（Product Advisor）角色保留
+
+   **Sprint 0 — 端到端可玩性測試：**
+   - Docker Compose 3 containers（postgres, hub, web）全部啟動
+   - 發現並修復 4 個 blocking bug：
+     1. 缺少 Phase 2 DB migration（0002_phase2_prompt_brawl.sql）— agent_stats/trials/trial_results 表未建立
+     2. GET /api/agents/:id 在 agent_stats 不存在時 500 崩潰 — 加 try/catch
+     3. AgentDex React hook 順序錯誤（useCallback 在 early return 之後）— 移到 return 之前
+     4. Arena 頁面 useSearchParams 缺少 Suspense 邊界 — 加 Suspense wrapper
+   - 所有 7 個頁面驗證通過（Home, AgentDex, Pairings, Chat, Arena, Settings, Login）
+   - 完整流程測試：AgentDex → 選擇 Agent → CHALLENGE → Arena
+   - 卡點：Arena 停在 "WAITING FOR MATCH..."（demo agent 無 WS 連線）
+
+4. Files changed:
+   - New: `packages/hub/drizzle/0002_phase2_prompt_brawl.sql`
+   - Modified: `packages/hub/drizzle/meta/_journal.json`
+   - Modified: `packages/hub/src/server/routes/agents.ts`
+   - Modified: `packages/web/src/app/agentdex/page.tsx`
+   - Modified: `packages/web/src/app/arena/page.tsx`
+   - Modified: `dev/SESSION_LOG.md`
+
+5. Key decisions:
+   - 產品方向：純社交遊戲平台（Fun Layer only）
+   - 開發模式：Sprint 制（取代 spec-driven waterfall）
+   - 現有代碼完全保留（不需重寫）
+   - Sprint 1 目標：雙人 PvP 端到端對戰
+
+6. Verification: typecheck ✅ lint ✅ test 624/624 (82 files) ✅ format:check ✅
+
+---
+
 ## 2026-03-05 Session 56 — OpenClaw Integration Investigation + Governance Hardening (Claude)
 
 1. Agent & Session ID: Claude_20260305_2100
