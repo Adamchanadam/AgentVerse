@@ -66,6 +66,7 @@ export interface TrialsCreatedPayload {
 export interface TrialsStartedPayload {
   trial_id: string;
   rule_payload: TrialRule;
+  challenger_agent_id: string;
 }
 
 export interface TrialsReportedPayload {

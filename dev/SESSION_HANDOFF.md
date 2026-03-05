@@ -5,8 +5,8 @@
 1. Version: Pre-alpha Sprint 1（Phase 1.5 + Phase 2 完成，Sprint 0 可玩性測試通過）
 2. Core commands / features: AgentVerse — AI Agent 社交遊戲平台（純 Fun Layer：Prompt Brawl PvP + 社交）
 3. Regression baseline: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check` 全綠
-4. Release / merge status: `main` branch @ commit `9e0fba7`（Sprint 0 fixes merged）
-5. Active branch / environment: `main` branch @ `D:\_Adam_Projects\AgentVerse`
+4. Release / merge status: `phase2-batch-b-trials-runner` branch（Sprint 1 bug fixes + UX + bot，待 PR merge 到 main）
+5. Active branch / environment: `phase2-batch-b-trials-runner` @ `D:\_Adam_Projects\AgentVerse`
 6. External platforms / dependencies in scope: OpenClaw（openclaw-main/ 為參考 codebase）、PostgreSQL、React/Next.js、Fastify、MiniMax M2.5 LLM（BYOK）
 7. Conda environment: `adamlab4_env`（Node v22.14.0、npm 10.9.2、pnpm 9.15.4）
 
@@ -23,7 +23,7 @@
 
 1. Product / System Layer: AgentVerse Hub + Web UI（Prompt Brawl PvP 社交遊戲）+ OpenClaw Channel Plugin `agentverse`
 2. Development Governance Layer: AGENTS.md 治理框架 + Sprint 制開發
-3. Current task belongs to which layer: Product（**Sprint 1：雙人 PvP 端到端驗證**；624/624 tests，82 files）
+3. Current task belongs to which layer: Product（**Sprint 1：雙人 PvP 端到端驗證**；626/626 tests，82 files）
 4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格已對齊 v2026.3.1 官方 codebase；持續監控後續版本變化
 
 ## Mandatory Start Checklist
@@ -46,8 +46,8 @@
 ### Sprint Backlog（Sprint 制，以可玩 Demo 為目標）
 
 1. **Sprint 0 ✅ 完成**（2026-03-05）：Docker 跑起來，單人流程跑通，修復 4 個 blocking bug
-2. **Sprint 1 🔄 進行中**：雙人 PvP 端到端對戰 + 文檔全面對齊
-3. **Sprint 2（待定）**：根據 Sprint 1 人手測試結果決定
+2. **Sprint 1 🔄 進行中**：雙人 PvP 端到端對戰 — 3 critical bug fixes + Arena UX 大幅重寫 + E2E 加密 PvP Bot 完成（626 tests）。待人手測試驗證完整對戰流程。
+3. **Sprint 2（待定）**：Codex 建議中的 S12-S22（Agent 名稱顯示、音效、回合計時器視覺化、觀戰模式等）
 
 ### 已完成里程碑（參考）
 
@@ -73,7 +73,7 @@
 
 1. Required checks: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check`
 2. Current failing checks (if any): 1 pre-existing flaky PBT timeout (P5 server_seq Monotonic — passes in isolation, times out under full suite resource contention)
-3. Test count: 624（82 files）
+3. Test count: 626（82 files）
 4. Release / merge blocking conditions: N/A
 
 ## Antigravity（UI/UX Design Agent）交接狀態
@@ -133,6 +133,48 @@
 - **UX 規格**：新建 `dev/ui-ux/coach_console_ux.md`，定義 Prompt Brawl 的人機與代理協作 3 步驟可視化流程（輸入 → 思考（ASCII spinner） → 回應）。
 - **[FUTURE] 標記**：GenePack Exchange Preview (7.8) 與 Spectator Mode (7.9) 佈局藍圖均已佔位標記，待 Phase 3 實作。
 
+### 🎨 Antigravity 交辦：Arena UI 圖形資產（Sprint 1 → Sprint 2）
+
+**狀態**：待交辦。Arena 頁面目前全部使用 CSS + ASCII 文字渲染，可運作但缺乏視覺吸引力。以下為可交由 Antigravity 設計的圖形資產需求。
+
+**設計風格**：沿用 Modern Retro 256-Color BBS & GBA Hybrid（見 `dev/ui-ux/design_tokens.md`）。所有圖片需為 pixel art 風格、透明背景 PNG。
+
+**P0 資產（Sprint 2 優先）：**
+
+1. **`badge_first_win.png`** (32x32)
+   - 首次 Prompt Brawl 勝利徽章
+   - 色調：金色/黃色系，帶獎杯或星星元素
+   - 用途：Result Overlay 中「BADGE UNLOCKED」顯示
+
+2. **`bg_arena_tile.png`** (128x128, tileable)
+   - Arena 專用背景磚塊
+   - 比 agentdex 更暗的深色調，帶微妙的格鬥/對戰氛圍
+   - 可選：微弱的網格線或電路紋路
+   - 用途：CSS `background-repeat: repeat` on Arena page
+
+3. **`icon_vs.png`** (64x64)
+   - VS 對戰標誌
+   - 高對比度，ANSI 洋紅 + 青色
+   - 用途：Pre-match briefing 的 VS 區塊
+
+**P1 資產（Sprint 2+ 可選）：**
+
+4. **`banner_victory.png`** (320x64)
+   - 勝利橫幅（可替換目前的 ASCII `>>> VICTORY <<<`）
+   - 綠色/青色系，帶光芒或閃爍效果暗示
+
+5. **`banner_defeat.png`** (320x64)
+   - 失敗橫幅（可替換目前的 ASCII `>>> DEFEAT <<<`）
+   - 橙色/紅色系，帶灰暗效果
+
+6. **`badge_streak_3.png`** (32x32)
+   - 三連勝徽章
+   - 火焰元素
+
+**交付路徑**：`packages/hub/public/assets/mvp-default/{category}/{id}.png`
+**YAML 更新**：新增項目到 `tools/asset-gen/items/mvp-default.yaml`
+**⚠️ 注意**：使用 `--force` 旗標才可覆寫已存在檔案（INC-20260302 防護規則）
+
 ### Asset Gen CLI（已完成 ✅ + INC-20260302 修復）
 
 - **5 modules** in `tools/asset-gen/src/`：types, yaml-parser, manifest-generator, placeholder-gen, cli
@@ -163,23 +205,26 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 ## Last Session Record
 
 1. UTC date: 2026-03-05
-2. Session ID: Claude_20260305_2300
+2. Session ID: Claude_20260305_2400
 3. Completed:
-   - **產品轉向決策** — 「社群＋遊戲化成長＋DNA 交換」→「AI Agent 社交遊戲平台」（純 Fun Layer）
-   - **Sprint 0** ✅ — Docker 部署 + 端到端可玩性測試 + 4 bug fixes（624 tests）
-   - **Sprint 1 文檔對齊** — 所有治理文件更新為新定位
-4. Pending: Sprint 1 技術驗證（雙人 PvP 端到端對戰）
+   - **Sprint 1 Bug Fixes**：challenger_agent_id 缺失（CRITICAL）、Timer 太短、React 重複渲染迴圈
+   - **Sprint 1 UX Overhaul**：Arena pre-match briefing + match-active UX 改善 + result overlay 強化
+   - **Sprint 1 E2E Bot**：pvp-test-bot.mjs 完整重寫（加密、BrawlMessage、verdict 協調）
+   - **Codex Product Advisor** 整合：22 建議，篩選採用 6 項
+4. Pending:
+   - 人手測試驗證完整 PvP 對戰流程（browser + bot）
+   - Antigravity Arena UI 設計資產（見下方指令）
+   - PR merge 到 main
 5. Next priorities (max 3):
-   - 完成 Sprint 1：雙人 PvP 端到端對戰驗證
+   - 人手測試：啟動 Hub + Web + Bot，驗證完整對戰流程
+   - Antigravity：Arena UI 圖形資產（見下方 Arena 資產需求）
    - Sprint 2：根據人手測試結果決定
-   - Security hardening（延後到穩定後）
 6. Risks / blockers:
    - TTL-mode catchup 未 JOIN offline_messages（不影響目前功能）
-   - Agent scope 尚未強制權限隔離（延後至 Phase 2+）
    - Client-side LLM API key 存 localStorage（XSS 風險，見 Risk Register R3）
    - Turn timer client-side only, no Hub enforcement (Risk R4)
    - 1 pre-existing flaky PBT (P5 server_seq Monotonic timeout under full suite)
-7. Validation: typecheck ✅ lint ✅ test 624/624 (82 files) ✅ format:check ✅
+7. Validation: typecheck ✅ lint ✅ test 626/626 (82 files) ✅ format:check ✅
 
 ### Previous Session Reference（Claude_20260302_2000）
 

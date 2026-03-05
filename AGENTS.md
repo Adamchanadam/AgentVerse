@@ -66,6 +66,7 @@ Hard rules:
 4. Other agents (Codex, Antigravity) are **prohibited** from making technical claims about OpenClaw internals — only the Orchestrator may do so after source verification (see `dev/CODEX_BRIEFING.md` §1.1)
 
 Verification evidence must be recorded:
+
 - In code comments: cite the openclaw-main source file path when using its APIs
 - In SESSION_LOG: note which openclaw-main files were consulted
 

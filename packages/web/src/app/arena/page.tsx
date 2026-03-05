@@ -56,7 +56,7 @@ function ArenaInner() {
   const [rule, setRule] = useState<TrialRule | null>(null);
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [turnCount, setTurnCount] = useState(0);
-  const [timerSec, setTimerSec] = useState(30);
+  const [timerSec, setTimerSec] = useState(90);
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [dangerLevel, setDangerLevel] = useState(0);
   const [result, setResult] = useState<{
@@ -65,7 +65,7 @@ function ArenaInner() {
     xpWinner: number;
     xpLoser: number;
   } | null>(null);
-  const [wsState, setWsState] = useState<WsClientState>("disconnected");
+  const [, setWsState] = useState<WsClientState>("disconnected");
   const [coachInput, setCoachInput] = useState("");
   const [coachStatus, setCoachStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +102,7 @@ function ArenaInner() {
   // ── Countdown timer ─────────────────────────────────────────────
   const startCountdown = useCallback(() => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
-    setTimerSec(30);
+    setTimerSec(90);
     timerIntervalRef.current = setInterval(() => {
       setTimerSec((prev) => {
         if (prev <= 1) {
@@ -148,107 +148,104 @@ function ArenaInner() {
       .catch(() => setPeerName(peerId.slice(0, 8)));
   }, [peerId]);
 
-  // ── Send encrypted BrawlMessage via msg.relay ───────────────────
-  const sendEncrypted = useCallback(
-    (plaintext: string, kp: { privateKey: string; publicKey: string }) => {
-      if (!pairId || !peerId || !wsRef.current || !encKeypairRef.current) return;
-      if (!peerPubkeyRef.current) return;
+  // ── Ref-based helpers (avoid useCallback dep chains → render loops) ──
 
-      const peerX25519Pub = ed25519KeyToX25519(hexToBytes(peerPubkeyRef.current), "public");
-      const peerX25519PubHex = bytesToHex(peerX25519Pub);
-
-      const eventId = crypto.randomUUID();
-      const aad: AadParts = {
-        event_id: eventId,
-        pair_id: pairId,
-        sender_pubkey: kp.publicKey,
-      };
-
-      const encrypted = encryptChat(plaintext, peerX25519PubHex, aad);
-
-      const envelope = buildSignedEnvelope(
-        kp.privateKey,
-        kp.publicKey,
-        "msg.relay",
-        {
-          pair_id: pairId,
-          ciphertext: encrypted.ciphertext,
-          ephemeral_pubkey: encrypted.ephemeral_pubkey,
-        },
-        [peerId],
-      );
-      // Override event_id to match AAD
-      envelope.event_id = eventId;
-      envelope.sig = signEnvelope(envelope, kp.privateKey);
-
-      wsRef.current.sendEnvelope(envelope);
-
-      // Update digest chain
-      digestRef.current = appendDigest(
-        digestRef.current,
-        eventId,
-        kp.publicKey,
-        encrypted.ciphertext,
-      );
-    },
-    [pairId, peerId],
-  );
-
-  // ── Report assembled verdict to Hub ─────────────────────────────
-  const reportVerdict = useCallback(
+  const sendEncryptedRef = useRef<
+    (plaintext: string, kp: { privateKey: string; publicKey: string }) => void
+  >(() => {});
+  const reportVerdictRef = useRef<
     (
       signed: import("@agentverse/shared").SignedVerdict,
       kp: { privateKey: string; publicKey: string },
-    ) => {
-      if (!pairId || !peerId) return;
-      const envelope = buildSignedEnvelope(
-        kp.privateKey,
-        kp.publicKey,
-        "trials.reported",
-        {
-          trial_id: signed.verdict.match_id,
-          signed_verdict: signed,
-        } as unknown as import("@agentverse/shared").EventPayload,
-        [peerId],
-      );
-      wsRef.current?.sendEnvelope(envelope);
-      addSystemMsg("Verdict reported. Waiting for settlement...");
-    },
-    [pairId, peerId, addSystemMsg],
-  );
+    ) => void
+  >(() => {});
+  const buildAndSendVerdictRef = useRef<
+    (triggerEventId: string, loserId: string, kp: { privateKey: string; publicKey: string }) => void
+  >(() => {});
 
-  // ── Build verdict for a trigger event and send/report ───────────
-  const buildAndSendVerdict = useCallback(
-    (triggerEventId: string, loserId: string, kp: { privateKey: string; publicKey: string }) => {
-      const machine = machineRef.current;
-      const vc = verdictCoordRef.current;
-      if (!machine || !vc || !agentId || !peerId || !machine.trialId || !machine.rule) return;
+  // Keep refs updated with latest closures (no dependency arrays needed)
+  sendEncryptedRef.current = (plaintext, kp) => {
+    if (!pairId || !peerId || !wsRef.current || !encKeypairRef.current) return;
+    if (!peerPubkeyRef.current) return;
 
-      const winnerId = loserId === agentId ? peerId : agentId;
+    const peerX25519Pub = ed25519KeyToX25519(hexToBytes(peerPubkeyRef.current), "public");
+    const peerX25519PubHex = bytesToHex(peerX25519Pub);
 
-      const { verdict, sig } = vc.buildAndSign({
-        matchId: machine.trialId,
-        winnerId,
-        loserId,
-        ruleId: machine.rule.id,
-        triggerEventId,
-        transcriptDigest: digestRef.current,
-      });
+    const eventId = crypto.randomUUID();
+    const aad: AadParts = {
+      event_id: eventId,
+      pair_id: pairId,
+      sender_pubkey: kp.publicKey,
+    };
 
-      // Send verdict_sig to peer via msg.relay
-      const brawlMsg: BrawlMessage = { type: "verdict_sig", verdict, sig };
-      sendEncrypted(serializeBrawlMessage(brawlMsg), kp);
+    const encrypted = encryptChat(plaintext, peerX25519PubHex, aad);
 
-      machine.onVerdictSent();
+    const envelope = buildSignedEnvelope(
+      kp.privateKey,
+      kp.publicKey,
+      "msg.relay",
+      {
+        pair_id: pairId,
+        ciphertext: encrypted.ciphertext,
+        ephemeral_pubkey: encrypted.ephemeral_pubkey,
+      },
+      [peerId],
+    );
+    envelope.event_id = eventId;
+    envelope.sig = signEnvelope(envelope, kp.privateKey);
 
-      // Check if both sigs are present (peer may have already sent theirs)
-      const assembled = vc.getSignedVerdict();
-      if (assembled) {
-        reportVerdict(assembled, kp);
-      }
-    },
-    [agentId, peerId, sendEncrypted, reportVerdict],
-  );
+    wsRef.current.sendEnvelope(envelope);
+
+    digestRef.current = appendDigest(
+      digestRef.current,
+      eventId,
+      kp.publicKey,
+      encrypted.ciphertext,
+    );
+  };
+
+  reportVerdictRef.current = (signed, kp) => {
+    if (!pairId || !peerId) return;
+    const envelope = buildSignedEnvelope(
+      kp.privateKey,
+      kp.publicKey,
+      "trials.reported",
+      {
+        trial_id: signed.verdict.match_id,
+        signed_verdict: signed,
+      } as unknown as import("@agentverse/shared").EventPayload,
+      [peerId],
+    );
+    wsRef.current?.sendEnvelope(envelope);
+    addSystemMsg("Verdict reported. Waiting for settlement...");
+  };
+
+  buildAndSendVerdictRef.current = (triggerEventId, loserId, kp) => {
+    const machine = machineRef.current;
+    const vc = verdictCoordRef.current;
+    if (!machine || !vc || !agentId || !peerId || !machine.trialId || !machine.rule) return;
+
+    const winnerId = loserId === agentId ? peerId : agentId;
+
+    const { verdict, sig } = vc.buildAndSign({
+      matchId: machine.trialId,
+      winnerId,
+      loserId,
+      ruleId: machine.rule.id,
+      triggerEventId,
+      transcriptDigest: digestRef.current,
+    });
+
+    const brawlMsg: BrawlMessage = { type: "verdict_sig", verdict, sig };
+    sendEncryptedRef.current(serializeBrawlMessage(brawlMsg), kp);
+
+    machine.onVerdictSent();
+
+    const assembled = vc.getSignedVerdict();
+    if (assembled) {
+      reportVerdictRef.current(assembled, kp);
+    }
+  };
 
   // ── Initialize match state machine ──────────────────────────────
   useEffect(() => {
@@ -258,13 +255,11 @@ function ArenaInner() {
       onStateChange: (state) => {
         setMatchState(state);
       },
-      // Fix #4: Timeout-forfeit builds verdict
       onTurnTimeout: (forfeitId) => {
         addSystemMsg(`Timeout! ${forfeitId === agentId ? "You" : "Peer"} forfeit.`);
-        // Build verdict: forfeit agent is the loser
         const kp = keypairRef.current;
         if (kp) {
-          buildAndSendVerdict("timeout", forfeitId, kp);
+          buildAndSendVerdictRef.current("timeout", forfeitId, kp);
         }
       },
       onRuleTriggered: (_result, _eventId) => {
@@ -277,7 +272,7 @@ function ArenaInner() {
 
     const machine = new MatchStateMachine(
       {
-        turnTimerMs: 30_000,
+        turnTimerMs: 90_000,
         myAgentId: agentId,
         peerAgentId: peerId,
         pairId,
@@ -289,171 +284,153 @@ function ArenaInner() {
     return () => {
       machine.dispose();
     };
-  }, [agentId, peerId, pairId, addSystemMsg, buildAndSendVerdict]);
+  }, [agentId, peerId, pairId, addSystemMsg]);
 
-  // ── Handle incoming WS events (via ref to avoid stale closure) ──
+  // ── Handle incoming WS events (ref-based to avoid stale closures) ──
   const handleIncomingEventRef = useRef<
     ((envelope: EventEnvelope, kp: { privateKey: string; publicKey: string }) => void) | null
   >(null);
 
-  handleIncomingEventRef.current = useCallback(
-    (envelope: EventEnvelope, kp: { privateKey: string; publicKey: string }) => {
-      if (envelope.event_type === "trials.started") {
-        const payload = envelope.payload as unknown as TrialsStartedPayload;
-        const machine = machineRef.current;
-        if (machine) {
-          machine.onTrialsStarted(payload.trial_id, payload.rule_payload, agentId ?? "");
-          setRule(payload.rule_payload);
-          ruleRef.current = payload.rule_payload;
-          setIsMyTurn(machine.isMyTurn);
-          digestRef.current = initDigest(payload.trial_id);
-          addSystemMsg(
-            `Match started! Rule: ${payload.rule_payload.display_hint} | ${machine.isMyTurn ? "Your turn" : "Peer's turn"}`,
-          );
-          startCountdown();
+  handleIncomingEventRef.current = (
+    envelope: EventEnvelope,
+    kp: { privateKey: string; publicKey: string },
+  ) => {
+    if (envelope.event_type === "trials.started") {
+      const payload = envelope.payload as unknown as TrialsStartedPayload;
+      const machine = machineRef.current;
+      if (machine) {
+        machine.onTrialsStarted(
+          payload.trial_id,
+          payload.rule_payload,
+          payload.challenger_agent_id,
+        );
+        setRule(payload.rule_payload);
+        ruleRef.current = payload.rule_payload;
+        setIsMyTurn(machine.isMyTurn);
+        digestRef.current = initDigest(payload.trial_id);
+        addSystemMsg(
+          `Match started! Rule: ${payload.rule_payload.display_hint} | ${machine.isMyTurn ? "Your turn" : "Peer's turn"}`,
+        );
+        startCountdown();
 
-          // Fix #3: Init verdict coordinator — use peerPubkeyRef which is already loaded
-          if (agentId && peerPubkeyRef.current) {
-            verdictCoordRef.current = new VerdictCoordinator({
-              myPrivKeyHex: kp.privateKey,
-              myPubKeyHex: kp.publicKey,
-              peerPubKeyHex: peerPubkeyRef.current,
-              myAgentId: agentId,
-            });
-          } else {
-            addSystemMsg("[warn] Peer pubkey not loaded yet — verdict may fail");
-          }
+        if (agentId && peerPubkeyRef.current) {
+          verdictCoordRef.current = new VerdictCoordinator({
+            myPrivKeyHex: kp.privateKey,
+            myPubKeyHex: kp.publicKey,
+            peerPubKeyHex: peerPubkeyRef.current,
+            myAgentId: agentId,
+          });
+        } else {
+          addSystemMsg("[warn] Peer pubkey not loaded yet — verdict may fail");
         }
-        return;
       }
+      return;
+    }
 
-      if (envelope.event_type === "trials.settled") {
-        const payload = envelope.payload as unknown as TrialsSettledPayload;
-        machineRef.current?.onTrialsSettled(payload);
-        setResult({
-          winner: payload.winner_agent_id,
-          loser: payload.loser_agent_id,
-          xpWinner: payload.xp_winner,
-          xpLoser: payload.xp_loser,
-        });
-        return;
-      }
+    if (envelope.event_type === "trials.settled") {
+      const payload = envelope.payload as unknown as TrialsSettledPayload;
+      machineRef.current?.onTrialsSettled(payload);
+      setResult({
+        winner: payload.winner_agent_id,
+        loser: payload.loser_agent_id,
+        xpWinner: payload.xp_winner,
+        xpLoser: payload.xp_loser,
+      });
+      return;
+    }
 
-      if (envelope.event_type === "msg.relay") {
-        const relayPayload = envelope.payload as unknown as MsgRelayPayload;
-        if (relayPayload.pair_id !== pairId) return;
-        if (!encKeypairRef.current) return;
+    if (envelope.event_type === "msg.relay") {
+      const relayPayload = envelope.payload as unknown as MsgRelayPayload;
+      if (relayPayload.pair_id !== pairId) return;
+      if (!encKeypairRef.current) return;
 
-        // Update digest chain with ciphertext (Hub-visible field)
-        digestRef.current = appendDigest(
-          digestRef.current,
-          envelope.event_id,
-          envelope.sender_pubkey,
+      digestRef.current = appendDigest(
+        digestRef.current,
+        envelope.event_id,
+        envelope.sender_pubkey,
+        relayPayload.ciphertext,
+      );
+
+      try {
+        const aad: AadParts = {
+          event_id: envelope.event_id,
+          pair_id: pairId!,
+          sender_pubkey: envelope.sender_pubkey,
+        };
+        const plaintext = decryptChat(
           relayPayload.ciphertext,
+          relayPayload.ephemeral_pubkey,
+          encKeypairRef.current.privateKey,
+          aad,
         );
 
-        try {
-          const aad: AadParts = {
-            event_id: envelope.event_id,
-            pair_id: pairId!,
-            sender_pubkey: envelope.sender_pubkey,
-          };
-          const plaintext = decryptChat(
-            relayPayload.ciphertext,
-            relayPayload.ephemeral_pubkey,
-            encKeypairRef.current.privateKey,
-            aad,
-          );
+        const brawlMsg = parseBrawlMessage(plaintext);
+        if (!brawlMsg) return;
 
-          // Parse BrawlMessage
-          const brawlMsg = parseBrawlMessage(plaintext);
-          if (!brawlMsg) return;
+        if (brawlMsg.type === "chat") {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: envelope.event_id,
+              sender: "peer",
+              text: brawlMsg.text,
+              timestamp: envelope.ts,
+            },
+          ]);
+          conversationRef.current.push({ role: "peer", text: brawlMsg.text });
 
-          if (brawlMsg.type === "chat") {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: envelope.event_id,
-                sender: "peer",
-                text: brawlMsg.text,
-                timestamp: envelope.ts,
-              },
-            ]);
-            conversationRef.current.push({ role: "peer", text: brawlMsg.text });
+          const currentRule = ruleRef.current;
+          const machine = machineRef.current;
+          if (machine) {
+            const evalResult = machine.onMessageReceived(brawlMsg.text, envelope.event_id);
+            setTurnCount(machine.turnCount);
+            setIsMyTurn(machine.isMyTurn);
+            startCountdown();
 
-            // Evaluate rule (Fix #2: use ruleRef instead of stale `rule`)
-            const currentRule = ruleRef.current;
-            const machine = machineRef.current;
-            if (machine) {
-              const evalResult = machine.onMessageReceived(brawlMsg.text, envelope.event_id);
-              setTurnCount(machine.turnCount);
-              setIsMyTurn(machine.isMyTurn);
-              startCountdown();
-
-              if (evalResult?.triggered && currentRule) {
-                setDangerLevel(1);
-                // The peer who sent the triggering message is the loser
-                const loserId = peerId!;
-                buildAndSendVerdict(envelope.event_id, loserId, kp);
-              } else if (currentRule) {
-                setDangerLevel(computeDanger(brawlMsg.text, currentRule));
-              }
-            }
-          } else if (brawlMsg.type === "verdict_sig") {
-            // Fix #1: Receive peer's verdict signature — and counter-sign if needed
-            const vc = verdictCoordRef.current;
-            if (vc) {
-              try {
-                const assembled = vc.receivePeerSig(brawlMsg.verdict, brawlMsg.sig);
-                if (assembled) {
-                  // Both sigs present — report to Hub
-                  reportVerdict(assembled, kp);
-                } else if (!vc.isComplete) {
-                  // Peer sent sig first but we haven't signed yet.
-                  // If machine is in judging state, we need to counter-sign.
-                  const machine = machineRef.current;
-                  if (machine && machine.state === "judging") {
-                    // Use the verdict from the peer's message to build our own sig
-                    const { verdict, sig } = vc.buildAndSign({
-                      matchId: brawlMsg.verdict.match_id,
-                      winnerId: brawlMsg.verdict.winner_agent_id,
-                      loserId: brawlMsg.verdict.loser_agent_id,
-                      ruleId: brawlMsg.verdict.rule_id,
-                      triggerEventId: brawlMsg.verdict.trigger_event_id,
-                      transcriptDigest: brawlMsg.verdict.transcript_digest,
-                    });
-                    // Send our counter-sig
-                    const counterMsg: BrawlMessage = { type: "verdict_sig", verdict, sig };
-                    sendEncrypted(serializeBrawlMessage(counterMsg), kp);
-                    machine.onVerdictSent();
-                    // Now assemble
-                    const final = vc.getSignedVerdict();
-                    if (final) {
-                      reportVerdict(final, kp);
-                    }
-                  }
-                }
-              } catch {
-                addSystemMsg("[verdict sig mismatch]");
-              }
+            if (evalResult?.triggered && currentRule) {
+              setDangerLevel(1);
+              buildAndSendVerdictRef.current(envelope.event_id, peerId!, kp);
+            } else if (currentRule) {
+              setDangerLevel(computeDanger(brawlMsg.text, currentRule));
             }
           }
-        } catch {
-          addSystemMsg("[decryption failed]");
+        } else if (brawlMsg.type === "verdict_sig") {
+          const vc = verdictCoordRef.current;
+          if (vc) {
+            try {
+              const assembled = vc.receivePeerSig(brawlMsg.verdict, brawlMsg.sig);
+              if (assembled) {
+                reportVerdictRef.current(assembled, kp);
+              } else if (!vc.isComplete) {
+                const machine = machineRef.current;
+                if (machine && machine.state === "judging") {
+                  const { verdict, sig } = vc.buildAndSign({
+                    matchId: brawlMsg.verdict.match_id,
+                    winnerId: brawlMsg.verdict.winner_agent_id,
+                    loserId: brawlMsg.verdict.loser_agent_id,
+                    ruleId: brawlMsg.verdict.rule_id,
+                    triggerEventId: brawlMsg.verdict.trigger_event_id,
+                    transcriptDigest: brawlMsg.verdict.transcript_digest,
+                  });
+                  const counterMsg: BrawlMessage = { type: "verdict_sig", verdict, sig };
+                  sendEncryptedRef.current(serializeBrawlMessage(counterMsg), kp);
+                  machine.onVerdictSent();
+                  const final = vc.getSignedVerdict();
+                  if (final) {
+                    reportVerdictRef.current(final, kp);
+                  }
+                }
+              }
+            } catch {
+              addSystemMsg("[verdict sig mismatch]");
+            }
+          }
         }
+      } catch {
+        addSystemMsg("[decryption failed]");
       }
-    },
-    [
-      agentId,
-      pairId,
-      peerId,
-      startCountdown,
-      addSystemMsg,
-      buildAndSendVerdict,
-      sendEncrypted,
-      reportVerdict,
-    ],
-  );
+    }
+  };
 
   // ── Connect WS + auto-challenge ─────────────────────────────────
   useEffect(() => {
@@ -557,7 +534,7 @@ function ArenaInner() {
 
       // Wrap as BrawlMessage chat
       const brawlMsg: BrawlMessage = { type: "chat", text: response };
-      sendEncrypted(serializeBrawlMessage(brawlMsg), kp);
+      sendEncryptedRef.current(serializeBrawlMessage(brawlMsg), kp);
 
       // Add to local messages
       const eventId = crypto.randomUUID();
@@ -583,13 +560,14 @@ function ArenaInner() {
         setDangerLevel(computeDanger(response, rule));
       }
 
+      setCoachInput("");
       setCoachStatus("Sent!");
     } catch (e) {
       setCoachStatus(e instanceof Error ? e.message : "LLM call failed");
     } finally {
       setSending(false);
     }
-  }, [coachInput, rule, sending, sendEncrypted, startCountdown]);
+  }, [coachInput, rule, sending, startCountdown]);
 
   // ── API key modal submit ────────────────────────────────────────
   const handleApiKeySubmit = useCallback(() => {
@@ -649,53 +627,121 @@ function ArenaInner() {
 
   const isIdle = matchState === "idle" || matchState === "challenge_sent";
   const isActive = matchState === "in_progress";
+  const isJudging = matchState === "judging" || matchState === "reporting";
   const isFinished = matchState === "settled";
+  const hasApiKey = typeof window !== "undefined" && !!getMinimaxApiKey();
+
+  // Timer urgency color
+  const timerClass =
+    timerSec <= 10
+      ? styles.timerCritical
+      : timerSec <= 30
+        ? styles.timerWarning
+        : styles.statusTimer;
 
   return (
     <div className={styles.container}>
       {/* ── Status bar ── */}
       <div className={styles.statusBar}>
-        <span className={styles.statusRound}>Round {turnCount}</span>
-        <span className={styles.statusTimer}>{isActive ? `${timerSec}s` : "--"}</span>
-        <span className={styles.statusRule}>{rule ? `Rule: ${rule.display_hint}` : "No rule"}</span>
-        {wsState === "connected" && <span className={styles.secureBadge}>[SECURE]</span>}
+        <span className={styles.statusRound}>
+          {isActive || isJudging || isFinished ? `Turn ${turnCount}` : "---"}
+        </span>
+        <span className={timerClass}>{isActive ? `${timerSec}s` : "--"}</span>
+        <span className={styles.statusRule}>
+          {rule ? `Forbidden: ${rule.display_hint}` : "---"}
+        </span>
+        {isActive && (
+          <span className={isMyTurn ? styles.turnBadgeMine : styles.turnBadgePeer}>
+            {isMyTurn ? "YOUR TURN" : "OPPONENT'S TURN"}
+          </span>
+        )}
       </div>
 
-      {/* ── Pre-match idle state ── */}
+      {/* ── API Key Warning Banner ── */}
+      {!hasApiKey && !showApiKeyModal && (isIdle || isActive) && (
+        <div className={styles.apiKeyBanner}>
+          <span>{">"} LLM API KEY REQUIRED to play.</span>
+          <RetroButton label="SET API KEY" onClick={() => setShowApiKeyModal(true)} />
+        </div>
+      )}
+
+      {/* ── Pre-match: Briefing Screen ── */}
       {isIdle ? (
         <div className={styles.idleContainer}>
-          <div className={styles.idleTitle}>
-            {matchState === "idle" ? "ARENA" : "WAITING FOR MATCH..."}
+          <pre className={styles.asciiTitle}>{`
+  ╔═══════════════════════════╗
+  ║    P R O M P T  B R A W L ║
+  ╚═══════════════════════════╝`}</pre>
+          <div className={styles.vsBlock}>
+            <span className={styles.vsYou}>YOU</span>
+            <span className={styles.vsSeparator}>{"//VS//"}</span>
+            <span className={styles.vsPeer}>{peerName.toUpperCase()}</span>
           </div>
-          <div className={styles.idleHint}>
-            {matchState === "idle"
-              ? `vs ${peerName}`
-              : "Challenge sent. Hub will start the match shortly."}
+
+          <div className={styles.briefing}>
+            <div className={styles.briefingTitle}>{">"} HOW TO PLAY</div>
+            <div className={styles.briefingText}>
+              Each match has a <span className={styles.highlight}>FORBIDDEN WORD</span> (shown as a
+              hint like &quot;m____&quot;).
+            </div>
+            <div className={styles.briefingText}>
+              You are the <span className={styles.highlight}>COACH</span>. Type strategy
+              instructions to guide your AI agent&apos;s conversation.
+            </div>
+            <div className={styles.briefingText}>
+              <span className={styles.highlight}>GOAL:</span> Trick your opponent&apos;s AI into
+              saying the forbidden word. Avoid saying it yourself!
+            </div>
+            <div className={styles.briefingText}>
+              The <span className={styles.highlight}>DANGER METER</span> shows how close messages
+              are to the forbidden pattern.
+            </div>
           </div>
-          <AsciiSpinner />
+
+          {matchState === "challenge_sent" ? (
+            <div className={styles.waitingBlock}>
+              <AsciiSpinner text="CONNECTING" />
+              <div className={styles.idleHint}>Challenge sent. Match starting shortly...</div>
+            </div>
+          ) : (
+            <div className={styles.waitingBlock}>
+              <AsciiSpinner text="CONNECTING" />
+              <div className={styles.idleHint}>Connecting to opponent...</div>
+            </div>
+          )}
         </div>
       ) : (
         <>
           {/* ── Coach Console (left) ── */}
           <div className={styles.coachPanel}>
-            <div className={styles.coachTitle}>COACH CONSOLE</div>
+            <div className={styles.coachTitle}>{">"} COACH CONSOLE</div>
             <div className={styles.coachArea}>
+              <div className={styles.coachHelp}>
+                Type your strategy. Your AI will craft a response based on your instruction.
+              </div>
               <textarea
                 className={styles.coachTextarea}
-                placeholder="Enter tactical instruction for your agent..."
+                placeholder={
+                  'Example strategies:\n• "Steer the topic toward food"\n• "Ask about their weekend plans"\n• "Agree with everything they say"'
+                }
                 value={coachInput}
                 onChange={(e) => setCoachInput(e.target.value)}
                 disabled={!isActive || !isMyTurn || sending}
                 aria-label="Coach instruction input"
               />
               <RetroButton
-                label={sending ? "THINKING..." : "SEND STRATEGY"}
+                label={sending ? "GENERATING..." : "SEND STRATEGY"}
                 onClick={handleSendStrategy}
                 disabled={!isActive || !isMyTurn || !coachInput.trim() || sending}
               />
-              {coachStatus && <div className={styles.coachStatus}>{coachStatus}</div>}
-              <div className={styles.coachStatus}>
-                {isActive ? (isMyTurn ? "YOUR TURN" : "PEER'S TURN") : matchState.toUpperCase()}
+              <div className={styles.coachStatusLine}>
+                {coachStatus && <span>{coachStatus}</span>}
+                {isActive && !coachStatus && (
+                  <span className={isMyTurn ? styles.turnTextMine : styles.turnTextPeer}>
+                    {isMyTurn ? "Waiting for your strategy..." : "Opponent is thinking..."}
+                  </span>
+                )}
+                {isJudging && <span className={styles.judgingText}>JUDGING...</span>}
               </div>
             </div>
           </div>
@@ -703,6 +749,11 @@ function ArenaInner() {
           {/* ── Chat area (center) ── */}
           <div className={styles.chatArea}>
             <div className={styles.messageLog} role="log" aria-live="polite">
+              {messages.length === 0 && isActive && (
+                <div className={styles.systemMsg}>
+                  --- MATCH STARTED --- Trick your opponent into saying the forbidden word!
+                </div>
+              )}
               {messages.map((m) => (
                 <div
                   key={m.id}
@@ -716,7 +767,7 @@ function ArenaInner() {
                 >
                   {m.sender === "system"
                     ? `--- ${m.text} ---`
-                    : `> ${m.sender === "self" ? "you" : peerName}: ${m.text}`}
+                    : `[T${turnCount}] > ${m.sender === "self" ? "you" : peerName}: ${m.text}`}
                 </div>
               ))}
               <div ref={logEndRef} />
@@ -726,15 +777,30 @@ function ArenaInner() {
           {/* ── Danger meter (right) ── */}
           <div className={styles.dangerPanel}>
             <DangerMeter level={dangerLevel} />
+            <div className={styles.dangerHelp}>Proximity to forbidden pattern</div>
           </div>
         </>
       )}
 
-      {/* ── Result overlay (Fix #5: REMATCH + AGENTDEX) ── */}
+      {/* ── Result overlay ── */}
       {isFinished && result && (
         <div className={styles.resultOverlay}>
-          <div className={result.winner === agentId ? styles.victory : styles.defeat}>
-            {result.winner === agentId ? ">>> VICTORY <<<" : ">>> DEFEAT <<<"}
+          <pre className={styles.resultAscii}>
+            {result.winner === agentId
+              ? `╔═══════════════════╗
+║   V I C T O R Y   ║
+╚═══════════════════╝`
+              : `╔═══════════════════╗
+║    D E F E A T    ║
+╚═══════════════════╝`}
+          </pre>
+          <div className={styles.resultSummary}>
+            {rule && (
+              <div className={styles.resultRule}>
+                Forbidden word: <span className={styles.highlight}>{rule.pattern}</span>
+              </div>
+            )}
+            <div className={styles.resultDetail}>Rounds played: {turnCount}</div>
           </div>
           <div className={styles.resultXp}>
             XP: +{result.winner === agentId ? result.xpWinner : result.xpLoser}
@@ -742,7 +808,7 @@ function ArenaInner() {
           <div className={styles.resultButtons}>
             <RetroButton label="REMATCH" onClick={handleRematch} />
             <RetroButton
-              label="AGENTDEX"
+              label="BACK TO AGENTDEX"
               variant="ghost"
               onClick={() => router.push("/agentdex")}
             />
@@ -754,15 +820,18 @@ function ArenaInner() {
       {showApiKeyModal && (
         <div className={styles.modal}>
           <div className={styles.modalContent}>
-            <div className={styles.modalTitle}>MINIMAX API KEY</div>
+            <div className={styles.modalTitle}>{">"} LLM API KEY SETUP</div>
             <div className={styles.modalHint}>
-              Enter your MiniMax API key. It is stored locally in your browser and never sent to the
-              Hub.
+              Prompt Brawl uses MiniMax M2.5 to power your AI agent. You need an API key to play.
+            </div>
+            <div className={styles.modalHint}>
+              Get your key at <span className={styles.highlight}>api.minimax.io</span> (free tier
+              available). Your key stays in your browser and is never sent to the server.
             </div>
             <input
               className={styles.modalInput}
               type="password"
-              placeholder="sk-..."
+              placeholder="eyJ... or sk-..."
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
               onKeyDown={(e) => {
@@ -779,7 +848,7 @@ function ArenaInner() {
                 onClick={() => setShowApiKeyModal(false)}
               />
               <RetroButton
-                label="SAVE"
+                label="SAVE KEY"
                 onClick={handleApiKeySubmit}
                 disabled={!apiKeyInput.trim()}
               />
@@ -789,7 +858,7 @@ function ArenaInner() {
       )}
 
       {error && (
-        <div style={{ position: "absolute", bottom: 60, left: 300 }}>
+        <div className={styles.errorFloat}>
           <ErrorDisplay message={error} />
         </div>
       )}
@@ -799,7 +868,13 @@ function ArenaInner() {
 
 export default function ArenaPage() {
   return (
-    <Suspense fallback={<div style={{ color: "var(--accent-cyan)", textAlign: "center", paddingTop: "40vh" }}>Loading Arena...</div>}>
+    <Suspense
+      fallback={
+        <div style={{ color: "var(--accent-cyan)", textAlign: "center", paddingTop: "40vh" }}>
+          Loading Arena...
+        </div>
+      }
+    >
       <ArenaInner />
     </Suspense>
   );

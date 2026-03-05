@@ -1,5 +1,53 @@
 # Session Log
 
+## 2026-03-05 Session 59 — Sprint 1: Bug Fixes + UX Overhaul + Encrypted PvP Bot (Claude)
+
+1. Agent & Session ID: Claude_20260305_2400
+2. Summary: Sprint 1 「全面修復」— 修復 3 個 critical bugs、重寫 Arena UX、加入完整 E2E 加密的 PvP 測試機器人。Codex Product Advisor 提供 22 項建議，篩選採用 P0/P1 共 6 項。
+
+3. What was done:
+
+   **Critical Bug Fixes:**
+   - **challenger_agent_id 缺失**（#21 CRITICAL）：TrialsStartedPayload 缺少 `challenger_agent_id` 欄位，導致雙方都認為自己先手。修復：types.ts + schema.ts + ws-plugin.ts + arena page + E2E test
+   - **Timer 太短**（#22）：30s 不夠 Coach → LLM (MiniMax 2-5s) → 加密 → 發送流程。改為 90s
+   - **React 重複渲染迴圈**（#23）：useCallback 循環依賴鏈（buildAndSendVerdict → sendEncrypted → reportVerdict）導致 machine useEffect 不斷重建。改用 ref-based pattern 打破循環
+
+   **Arena UX Overhaul:**
+   - **Pre-match Briefing**（#24）：ASCII 標題 + VS 區塊 + HOW TO PLAY 遊戲說明 + 等待中動畫
+   - **Match-active UX**（#25）：Timer 三段式緊急色彩（normal → warning 30s → critical blink 10s）、醒目回合指示器、Coach 幫助文字、Danger meter 說明
+   - **Result Overlay**（#26）：ASCII 勝敗框 + 禁用詞揭示 + 回合數 + XP 顯示
+
+   **Encrypted PvP Test Bot:**
+   - **完整重寫 pvp-test-bot.mjs**（#27）：使用 @agentverse/shared 的加密函式（ed25519KeyToX25519 + encryptMessage + decryptMessage），BrawlMessage 協議（chat + verdict_sig），rule evaluation，verdict 簽名協調，transcript digest chain
+   - Bot 流程：bootstrap → WS auth → auto-approve pairing → receive trials.started → encrypted chat → intentionally trigger rule → verdict coordination → trials.reported → settlement
+
+   **Codex Product Advisor Integration:**
+   - 收到 22 項建議（S1-S22），判定採用 6 項（S1 briefing, S2 API key pre-check, S6 turn indicator, S8 match banner, S9 rule trigger UX, S10 result overlay），延後 10+ 項到 Sprint 2
+
+   **Lint / Config Fixes:**
+   - ESLint config 擴展 `tools/**/*.mjs` Node globals
+   - 移除未使用的 `wsState` 變數和 `sortedKeyJSON` import
+
+4. Files changed:
+   - Modified: `packages/shared/src/types.ts` (challenger_agent_id)
+   - Modified: `packages/shared/src/schema.ts` (TrialsStartedPayloadSchema)
+   - Modified: `packages/hub/src/server/ws/ws-plugin.ts` (trials.started broadcast)
+   - Modified: `packages/hub/src/e2e/trial-settlement.test.ts` (assertion)
+   - Modified: `packages/web/src/app/arena/page.tsx` (major refactor)
+   - Modified: `packages/web/src/app/arena/arena.module.css` (complete rewrite)
+   - Modified: `tools/pvp-test-bot.mjs` (complete rewrite with encryption)
+   - Modified: `eslint.config.mjs` (tools glob)
+
+5. Key decisions:
+   - Ref-based pattern for Arena page to avoid useCallback dependency loops
+   - 90s turn timer (vs 30s) for Coach → LLM → encrypt pipeline
+   - Bot deliberately triggers rule after 3 turns for E2E testing
+   - Codex S7 (agent names) and S12-S22 deferred to Sprint 2
+
+6. Validation: typecheck ✅ lint ✅ test 626/626 (82 files) ✅ format:check ✅
+
+---
+
 ## 2026-03-05 Session 58 — Sprint 1: 文檔對齊 + 雙人 PvP 驗證 (Claude)
 
 1. Agent & Session ID: Claude_20260305_2300
@@ -79,7 +127,7 @@
    - §1.2：三 Agent 角色分工表（Claude Code/Codex/Antigravity）
 
    **OpenClaw codebase 完整調查（Orchestrator 執行）：**
-   - 調查範圍：workspace.ts, identity-file.ts, system-prompt.ts, memory/, skills/, plugins/types.ts, config/types.*.ts, extensions/memory-lancedb/
+   - 調查範圍：workspace.ts, identity-file.ts, system-prompt.ts, memory/, skills/, plugins/types.ts, config/types.\*.ts, extensions/memory-lancedb/
    - 核心發現：OpenClaw 是 **file-based workspace 模型**，不是 API 驅動
    - Trait 整合：SOUL.md/IDENTITY.md 檔案寫入 或 `before_prompt_build` hook `prependContext`
    - Knowledge 整合：`memory/` 目錄 .md 檔（自動索引）或 `memory_store` tool API

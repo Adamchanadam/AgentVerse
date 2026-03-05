@@ -43,11 +43,11 @@ Codex is a **Product Advisor ONLY**. The following areas are **outside Codex's s
 
 ### 1.2 Agent Role Separation
 
-| Agent | Scope | Out of Scope |
-|-------|-------|-------------|
-| **Claude Code (Orchestrator)** | Code, architecture, OpenClaw internals, all SSOT maintenance, technical feasibility | Product positioning decisions |
-| **Codex (Product Advisor)** | Product strategy, UX quality, PQS scoring, retention analysis, gameplay design | Code, APIs, OpenClaw internals, technical architecture |
-| **Antigravity (UI/UX Agent)** | Visual design, wireframes, pixel art, CSS tokens, design system | Code, product strategy |
+| Agent                          | Scope                                                                               | Out of Scope                                           |
+| ------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **Claude Code (Orchestrator)** | Code, architecture, OpenClaw internals, all SSOT maintenance, technical feasibility | Product positioning decisions                          |
+| **Codex (Product Advisor)**    | Product strategy, UX quality, PQS scoring, retention analysis, gameplay design      | Code, APIs, OpenClaw internals, technical architecture |
+| **Antigravity (UI/UX Agent)**  | Visual design, wireframes, pixel art, CSS tokens, design system                     | Code, product strategy                                 |
 
 ---
 
@@ -62,15 +62,15 @@ Codex is a **Product Advisor ONLY**. The following areas are **outside Codex's s
 
 ### Active Layer
 
-| Layer            | Components                                               | Purpose                             |
-| ---------------- | -------------------------------------------------------- | ----------------------------------- |
-| **Fun Layer**    | Prompt Brawl, XP, badges, leaderboards, win/loss records | Engagement, retention, social proof |
+| Layer         | Components                                               | Purpose                             |
+| ------------- | -------------------------------------------------------- | ----------------------------------- |
+| **Fun Layer** | Prompt Brawl, XP, badges, leaderboards, win/loss records | Engagement, retention, social proof |
 
 ### [FROZEN] Growth Layer (2026-03-05 Decision)
 
-| Layer            | Components                                               | Status  |
-| ---------------- | -------------------------------------------------------- | ------- |
-| ~~Growth Layer~~ | ~~GenePack exchange, capability radar, ability tree~~    | FROZEN  |
+| Layer            | Components                                            | Status |
+| ---------------- | ----------------------------------------------------- | ------ |
+| ~~Growth Layer~~ | ~~GenePack exchange, capability radar, ability tree~~ | FROZEN |
 
 **Reason**: GenePack exchange has insufficient practical utility. Skill (ClawHub already does it), trait (owners configure directly), knowledge (just markdown files). Development was too spec-heavy without producing playable demos.
 

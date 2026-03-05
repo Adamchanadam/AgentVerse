@@ -337,7 +337,9 @@ export default function AgentDexPage() {
                             selectedPairing.agentAId === agentId
                               ? selectedPairing.agentBId
                               : selectedPairing.agentAId;
-                          router.push(`/arena?pair=${selectedPairing.id}&peer=${otherId}&action=challenge`);
+                          router.push(
+                            `/arena?pair=${selectedPairing.id}&peer=${otherId}&action=challenge`,
+                          );
                         }}
                         disabled={pairing}
                       />

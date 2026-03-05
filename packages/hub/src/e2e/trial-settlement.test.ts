@@ -94,6 +94,7 @@ describe("E2E: Trial settlement flow", () => {
     if (startedA.type === "event") {
       expect(startedA.payload.payload).toHaveProperty("trial_id");
       expect(startedA.payload.payload).toHaveProperty("rule_payload");
+      expect(startedA.payload.payload).toHaveProperty("challenger_agent_id", agentA.agentId);
     }
 
     const startedB = await agentB.collector.waitFor(

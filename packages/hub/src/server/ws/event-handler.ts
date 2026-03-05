@@ -227,7 +227,10 @@ async function validatePairingOp(
             event_id: envelope.event_id,
             result_ts: now,
             status: "rejected",
-            error: { code: "trial_already_active", message: "An active trial already exists for this pairing" },
+            error: {
+              code: "trial_already_active",
+              message: "An active trial already exists for this pairing",
+            },
           };
         }
       }

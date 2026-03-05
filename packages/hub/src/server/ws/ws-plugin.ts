@@ -365,6 +365,7 @@ async function wsPluginImpl(app: FastifyInstance): Promise<void> {
                 payload: {
                   trial_id: newTrial.id,
                   rule_payload: rule,
+                  challenger_agent_id: newTrial.createdBy,
                 } as unknown as EventPayload,
               },
               server_seq: resultFrame.server_seq ?? "0",

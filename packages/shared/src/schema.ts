@@ -114,6 +114,7 @@ export const TrialsCreatedPayloadSchema = z.object({
 export const TrialsStartedPayloadSchema = z.object({
   trial_id: z.string(),
   rule_payload: TrialRuleSchema,
+  challenger_agent_id: z.string(),
 });
 
 export const TrialsReportedPayloadSchema = z.object({
