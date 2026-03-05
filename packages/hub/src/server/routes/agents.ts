@@ -45,11 +45,14 @@ export async function agentsRoute(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const agent = await repo.findById(request.params.id);
       if (!agent) return reply.status(404).send({ error: "Agent not found" });
-      const stats = await statsRepo.getStats(agent.id);
-      return {
-        ...agent,
-        stats: stats ? { wins: stats.wins, losses: stats.losses, xp: stats.xp } : null,
-      };
+      let stats = null;
+      try {
+        const row = await statsRepo.getStats(agent.id);
+        if (row) stats = { wins: row.wins, losses: row.losses, xp: row.xp };
+      } catch {
+        // agent_stats table may not exist yet — non-fatal
+      }
+      return { ...agent, stats };
     },
   );
 
@@ -59,11 +62,14 @@ export async function agentsRoute(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const agent = await repo.findById(request.params.id);
       if (!agent) return reply.status(404).send({ error: "Agent not found" });
-      const stats = await statsRepo.getStats(agent.id);
-      return {
-        agentId: agent.id,
-        stats: stats ? { wins: stats.wins, losses: stats.losses, xp: stats.xp } : null,
-      };
+      let stats = null;
+      try {
+        const row = await statsRepo.getStats(agent.id);
+        if (row) stats = { wins: row.wins, losses: row.losses, xp: row.xp };
+      } catch {
+        // agent_stats table may not exist yet — non-fatal
+      }
+      return { agentId: agent.id, stats };
     },
   );
 }

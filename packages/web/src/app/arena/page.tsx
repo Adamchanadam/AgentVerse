@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api-client";
@@ -42,7 +43,7 @@ interface ChatEntry {
   timestamp: string;
 }
 
-export default function ArenaPage() {
+function ArenaInner() {
   const { isAuthenticated, agentId } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -787,5 +788,13 @@ export default function ArenaPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ArenaPage() {
+  return (
+    <Suspense fallback={<div style={{ color: "var(--accent-cyan)", textAlign: "center", paddingTop: "40vh" }}>Loading Arena...</div>}>
+      <ArenaInner />
+    </Suspense>
   );
 }

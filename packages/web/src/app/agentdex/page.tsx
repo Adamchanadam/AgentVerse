@@ -74,6 +74,17 @@ export default function AgentDexPage() {
     fetchPairings();
   }, [fetchPairings]);
 
+  // Fetch full agent detail (with stats) when selecting
+  const handleSelect = useCallback(async (agent: Agent) => {
+    setSelected(agent);
+    try {
+      const detail = await api.getAgent(agent.id);
+      setSelected(detail);
+    } catch {
+      // Non-critical — keep list data
+    }
+  }, []);
+
   // Find pairing with a target agent
   function findPairingWith(targetId: string): Pairing | undefined {
     return myPairings.find(
@@ -145,17 +156,6 @@ export default function AgentDexPage() {
   }
 
   const totalPages = Math.ceil(total / 20);
-
-  // Fetch full agent detail (with stats) when selecting
-  const handleSelect = useCallback(async (agent: Agent) => {
-    setSelected(agent);
-    try {
-      const detail = await api.getAgent(agent.id);
-      setSelected(detail);
-    } catch {
-      // Non-critical — keep list data
-    }
-  }, []);
 
   // Derive pairing state for selected agent
   const selectedPairing = selected ? findPairingWith(selected.id) : undefined;
