@@ -50,6 +50,29 @@ If alignment is not completed:
 
 ---
 
+## 0c) OpenClaw Codebase Verification (Mandatory for Orchestrator)
+
+Whenever the Orchestrator (Claude Code) is about to develop, modify, or design code that interacts with OpenClaw internals — including but not limited to plugin API usage, workspace file operations, skill/memory/identity integration, configuration mutations, hook registration, or channel protocol changes — the following verification steps are **mandatory before writing any code**:
+
+1. **Read the relevant source file(s) in `openclaw-main/`** to confirm the current API surface, function signatures, type definitions, and behavioral contracts
+2. **Cross-reference with `PROJECT_MASTER_SPEC.md` §18 (OpenClaw Integration Surface)** to ensure the approach aligns with documented integration paths
+3. If the OpenClaw API has changed since §18 was written (e.g., function renamed, hook removed, type modified), **update §18 first**, then proceed with implementation
+
+Hard rules:
+
+1. **Never assume** OpenClaw API behavior from memory or from AgentVerse documentation alone — always verify against `openclaw-main/` source code
+2. **Never invent** OpenClaw APIs that do not exist in the codebase (e.g., do not assume a "Brain Docs REST API" exists just because the term "Brain Docs" appears in documentation)
+3. When OpenClaw upstream changes are detected (new version, API breaking change), **halt implementation** and perform a full alignment pass before continuing
+4. Other agents (Codex, Antigravity) are **prohibited** from making technical claims about OpenClaw internals — only the Orchestrator may do so after source verification (see `dev/CODEX_BRIEFING.md` §1.1)
+
+Verification evidence must be recorded:
+- In code comments: cite the openclaw-main source file path when using its APIs
+- In SESSION_LOG: note which openclaw-main files were consulted
+
+> **Incident prevention**: This rule prevents the class of errors where AI agents make plausible-sounding but incorrect claims about external platform capabilities (ref: INC-20260305 RC-1, Codex PQS R8/R9 false-positive risk assessment).
+
+---
+
 ## 1) Single Entry (Mandatory)
 
 At the start of every new session, the AI must read the following files in this order:

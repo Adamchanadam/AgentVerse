@@ -1,5 +1,44 @@
 # Session Log
 
+## 2026-03-05 Session 56 — OpenClaw Integration Investigation + Governance Hardening (Claude)
+
+1. Agent & Session ID: Claude_20260305_2100
+2. Summary: Founder 要求 (1) 更新 Codex 技術邊界約束，(2) Orchestrator 實際調查 openclaw-main/ codebase 確認 Phase 3 GenePack 技術可行性。完成 OpenClaw 完整 codebase 調查（65 tool calls），建立 MASTER_SPEC §18 技術基礎文檔，新增 AGENTS.md §0c OpenClaw 驗證義務。
+
+3. What was done:
+
+   **Codex + Orchestrator 聯合評估：**
+   - 啟動 Codex 模擬進行 Phase 2.0 完成度評估 + Phase 3 就緒度評估
+   - Codex 首次 PQS 評分：加權平均 3.14/5（D1 人機協作、D3 新手引導、D5 留存深度為最弱項）
+   - Founder 指出 Codex 對 OpenClaw API 的技術判斷（R8/R9）超出其能力範圍
+
+   **Codex 技術邊界更新：**
+   - `dev/CODEX_BRIEFING.md` §1.1：明確禁止 Codex 對 OpenClaw API、代碼架構、技術介面提建議
+   - §1.2：三 Agent 角色分工表（Claude Code/Codex/Antigravity）
+
+   **OpenClaw codebase 完整調查（Orchestrator 執行）：**
+   - 調查範圍：workspace.ts, identity-file.ts, system-prompt.ts, memory/, skills/, plugins/types.ts, config/types.*.ts, extensions/memory-lancedb/
+   - 核心發現：OpenClaw 是 **file-based workspace 模型**，不是 API 驅動
+   - Trait 整合：SOUL.md/IDENTITY.md 檔案寫入 或 `before_prompt_build` hook `prependContext`
+   - Knowledge 整合：`memory/` 目錄 .md 檔（自動索引）或 `memory_store` tool API
+   - Skill 整合：`clawhub install slug@version`（已有成熟機制）
+   - **結論：不需要 OpenClaw 方面任何改動**
+
+   **治理更新：**
+   - `AGENTS.md` §0c（新增）：OpenClaw Codebase Verification — Orchestrator 開發 OpenClaw 相關代碼前必須先讀源碼驗證
+   - `PROJECT_MASTER_SPEC.md` §18（新增）：OpenClaw Integration Surface — 完整技術基礎文檔
+   - Codex R8/R9 風險修正：HIGH → LOW（非外部 API 依賴，是本地檔案操作）
+
+4. Files changed:
+   - Modified: `dev/CODEX_BRIEFING.md` (§1.1 技術邊界 + §1.2 角色分工)
+   - Modified: `AGENTS.md` (§0c OpenClaw 驗證義務)
+   - Modified: `dev/PROJECT_MASTER_SPEC.md` (§18 OpenClaw Integration Surface + §19 Change History)
+   - Modified: `dev/SESSION_LOG.md` (this entry)
+
+5. Key decision: Phase 3 GenePack 整合路徑已確認，不再 blocking。三種類型都有明確的 OpenClaw 整合機制。
+
+---
+
 ## 2026-03-05 Session 55 — Task 28 Batch D Completion + Phase 2.0 Checkpoint (Claude)
 
 1. Agent & Session ID: Claude_20260305_2000

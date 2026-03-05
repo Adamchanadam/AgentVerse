@@ -770,7 +770,83 @@ Agent 的 GenePack 以「背包」概念管理：
 
 ---
 
-## 18. Change History
+## 18. OpenClaw Integration Surface（Phase 3 技術基礎，2026-03-05 確立）
+
+> **來源**：Orchestrator 對 `openclaw-main/` 完整 codebase 的實際調查（非推測）。
+> **治理**：AGENTS.md §0b（外部平台對齊）+ §0c（OpenClaw 驗證義務）。
+
+### 18.1 核心架構：File-Based Workspace 模型
+
+OpenClaw 的 Agent「大腦」**不是 API 驅動**，而是一組 workspace 目錄下的 markdown 檔案，啟動時編譯為 system prompt。
+
+| Workspace 檔案 | 用途 | 對應 GenePack 類型 |
+|----------------|------|-------------------|
+| `SOUL.md` | 性格、人設、行為傾向 | trait |
+| `IDENTITY.md` | 名字、emoji、creature、vibe、theme、avatar | trait |
+| `AGENTS.md` | 行為指令、治理/處事邏輯 | trait |
+| `MEMORY.md` + `memory/*.md` | 知識庫（自動被 SQLite FTS5 + 向量索引） | knowledge |
+| `skills/` 目錄 | ClawHub 技能（SKILL.md + 安裝腳本） | skill |
+| `USER.md` | 主人資訊 | — (不可交換) |
+| `TOOLS.md` | 工具使用指引 | — (不可交換) |
+
+**關鍵檔案路徑**：
+- Workspace 根目錄：`~/.openclaw/workspace/`（預設）
+- 技能安裝目錄：`~/.openclaw/skills/`
+- 設定檔：`~/.openclaw/config.json5`
+
+### 18.2 三種 GenePack 的整合路徑
+
+#### Skill（clawhub / github 指針）
+
+- **OpenClaw 機制**：`clawhub install slug@version` → 裝到 `~/.openclaw/skills/`
+- **AgentVerse 整合**：GenePack 只存 `clawhub:slug@version` 或 `github:owner/repo@ref` 指針
+- **安裝流程**：owner 批准 → plugin 呼叫 ClawHub CLI → 技能就位
+- **風險等級**：LOW — 機制已存在且成熟
+- **來源檔**：`openclaw-main/skills/clawhub/SKILL.md`、`openclaw-main/src/agents/skills/workspace.ts`
+
+#### Trait（workspace 性格檔案片段）
+
+- **OpenClaw 機制（方式 A）**：直接寫入 workspace 檔案（SOUL.md / IDENTITY.md 片段注入）
+- **OpenClaw 機制（方式 B）**：Plugin hook `before_prompt_build` → `prependContext` 注入人格上下文（多個 plugin 的 prependContext 會被串接）
+- **AgentVerse 整合**：trait GenePack 存儲人格片段文本（personality tendencies, governance logic 等），`trait_ref` 指向該片段的唯一 ID
+- **安裝流程**：owner 批准 → plugin 將片段寫入 SOUL.md 或透過 hook 注入
+- **合併策略（待 Phase 3 設計決定）**：追加 vs 替換 SOUL.md 段落
+- **風險等級**：LOW — plugin API 已有完整存取權
+- **來源檔**：`openclaw-main/src/agents/workspace.ts`（bootstrap files）、`openclaw-main/src/plugins/types.ts`（hook types）
+
+#### Knowledge（memory 系統注入）
+
+- **OpenClaw 機制（方式 A）**：寫 `.md` 檔到 `memory/` 目錄 → 自動被 SQLite+FTS5+向量索引
+- **OpenClaw 機制（方式 B）**：使用 `memory_store` tool API（LanceDB 後端，支援分類：preference/decision/entity/fact/other）
+- **OpenClaw 機制（方式 C）**：設定 `memorySearch.extraPaths` 指向外部知識檔案
+- **AgentVerse 整合**：knowledge GenePack 存儲知識種子文本，`knowledge_domain` 標識領域
+- **安裝流程**：owner 批准 → plugin 將知識寫入 memory/ 目錄或透過 memory_store 注入
+- **風險等級**：LOW — 本地 SQLite/LanceDB，plugin 已有存取權
+- **來源檔**：`openclaw-main/src/memory/manager.ts`、`openclaw-main/extensions/memory-lancedb/index.ts`
+
+### 18.3 Plugin API 整合面（AgentVerse Channel Plugin 已有權限）
+
+AgentVerse 的 channel plugin 已透過 `OpenClawPluginApi` 擁有以下存取權：
+
+| 能力 | API | GenePack 用途 |
+|------|-----|--------------|
+| 註冊 lifecycle hooks | `api.registerHook("before_prompt_build", ...)` | Trait 注入 via `prependContext` |
+| 註冊工具 | `api.registerTool(...)` | GenePack 管理工具 |
+| 讀寫設定 | `api.runtime.config.writeConfigFile()` | 修改 agent skills/memory 設定 |
+| 記憶體搜尋 | `api.runtime.tools.createMemorySearchTool()` | Knowledge 整合 |
+| 路徑解析 | `api.resolvePath()` | Workspace 檔案存取 |
+
+### 18.4 不需要 OpenClaw 方面改動
+
+Phase 3 GenePack 整合**完全使用現有 OpenClaw plugin API 和 workspace 機制**，不需要：
+- ❌ OpenClaw core 代碼修改
+- ❌ 新的 OpenClaw API endpoint
+- ❌ OpenClaw 版本升級
+- ❌ 外部服務依賴
+
+---
+
+## 19. Change History
 
 | 日期       | 變更                                                                                                                                                                                                                                                                            | Session ID           |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
@@ -791,3 +867,4 @@ Agent 的 GenePack 以「背包」概念管理：
 | 2026-03-03 | Phase 1.5 Checkpoint (Task 24)；507/507 tests；§4.2 @noble/ciphers, §4.3 Auth Contract, §4.4 Deployment Boundary                                                                                                                                                                | Claude_20260303_1400 |
 | 2026-03-04 | **Phase 2.0 Prompt Brawl spec**：§16 Contract (events/settlement/digest/rules/LLM)、§17 GenePack schema (Phase 3 定義)、tasks.md Tasks 25-28、AGENTS.md §1b Cross-Agent Review Alignment、Risk Register                                                                         | Claude_20260304_1600 |
 | 2026-03-05 | **§17 GenePack 定義修正（INC-20260305）**：移除 Shadow Learning / prompt_template / strategy extraction 概念；改為 Agent-to-Agent 交換三類型模型（skill/trait/knowledge）；新增 §17.3 來源分層表、§17.4 trait PII 安全邊界、§17.5 背包 UI 概念；AGENTS.md 新增 §1c/§1d 治理規則 | Claude_20260305_1600 |
+| 2026-03-05 | **§18 OpenClaw Integration Surface**：基於 openclaw-main/ 完整 codebase 調查，文檔化 workspace file-based 架構、三種 GenePack 整合路徑（skill=ClawHub CLI, trait=SOUL.md+hook, knowledge=memory/目錄）、plugin API 整合面；AGENTS.md 新增 §0c OpenClaw 驗證義務；§18→§19 Change History 重編號 | Claude_20260305_2100 |
