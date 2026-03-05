@@ -212,6 +212,61 @@ describe("E2E: Trial settlement flow", () => {
     }
   });
 
+  it("accepts trials.created with rule_id=auto (seed-based selection)", async () => {
+    const envelope = createSignedEnvelope(
+      agentA.kp,
+      "trials.created",
+      {
+        pair_id: pairId,
+        rule_id: "auto",
+        seed: "ee".repeat(32),
+      },
+      [agentB.agentId],
+    );
+    const result = await submitAndWait(agentA, envelope);
+    expect(result.type).toBe("submit_result");
+    if (result.type === "submit_result") {
+      expect(result.payload.status).toBe("accepted");
+    }
+  });
+
+  it("rejects duplicate trials.created when active trial exists", async () => {
+    // First: create a valid trial
+    const first = createSignedEnvelope(
+      agentA.kp,
+      "trials.created",
+      {
+        pair_id: pairId,
+        rule_id: "fw_hello",
+        seed: "ee".repeat(32),
+      },
+      [agentB.agentId],
+    );
+    const firstResult = await submitAndWait(agentA, first);
+    expect(firstResult.type).toBe("submit_result");
+    if (firstResult.type === "submit_result") {
+      expect(firstResult.payload.status).toBe("accepted");
+    }
+
+    // Second trials.created for same pair should be rejected
+    const second = createSignedEnvelope(
+      agentB.kp,
+      "trials.created",
+      {
+        pair_id: pairId,
+        rule_id: "fw_hello",
+        seed: "ff".repeat(32),
+      },
+      [agentA.agentId],
+    );
+    const result = await submitAndWait(agentB, second);
+    expect(result.type).toBe("submit_result");
+    if (result.type === "submit_result") {
+      expect(result.payload.status).toBe("rejected");
+      expect(result.payload.error?.code).toBe("trial_already_active");
+    }
+  });
+
   it("rejects trials.created with non-active pairing", async () => {
     // Revoke the pairing first
     const revokeEnvelope = createSignedEnvelope(agentA.kp, "pair.revoked", { pair_id: pairId }, [

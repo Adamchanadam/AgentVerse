@@ -49,6 +49,7 @@ function ArenaInner() {
   const router = useRouter();
   const pairId = searchParams.get("pair");
   const peerId = searchParams.get("peer");
+  const action = searchParams.get("action"); // "challenge" = initiator, null = defender
 
   // ── Core state ──────────────────────────────────────────────────
   const [matchState, setMatchState] = useState<MatchState>("idle");
@@ -476,25 +477,30 @@ function ArenaInner() {
       onStateChange: (state) => {
         setWsState(state);
         if (state === "connected") {
-          addSystemMsg("Connected. Sending challenge...");
-          // Auto-send trials.created
-          const machine = machineRef.current;
-          if (machine && machine.state === "idle") {
-            machine.challenge();
-            const seed = crypto.randomUUID();
-            const envelope = buildSignedEnvelope(
-              kp.privateKey,
-              kp.publicKey,
-              "trials.created",
-              {
-                pair_id: pairId,
-                rule_id: "auto",
-                seed,
-              } as unknown as import("@agentverse/shared").EventPayload,
-              [peerId],
-            );
-            client.sendEnvelope(envelope);
-            addSystemMsg("Challenge sent. Waiting for match to start...");
+          // Only the challenger (action=challenge) creates the trial
+          if (action === "challenge") {
+            addSystemMsg("Connected. Sending challenge...");
+            const machine = machineRef.current;
+            if (machine && machine.state === "idle") {
+              machine.challenge();
+              // Generate seed as hex (no dashes) — selectRule requires hexToBytes
+              const seed = crypto.randomUUID().replace(/-/g, "");
+              const envelope = buildSignedEnvelope(
+                kp.privateKey,
+                kp.publicKey,
+                "trials.created",
+                {
+                  pair_id: pairId,
+                  rule_id: "auto",
+                  seed,
+                } as unknown as import("@agentverse/shared").EventPayload,
+                [peerId],
+              );
+              client.sendEnvelope(envelope);
+              addSystemMsg("Challenge sent. Waiting for match to start...");
+            }
+          } else {
+            addSystemMsg("Connected. Waiting for match to start...");
           }
         }
       },
@@ -519,7 +525,7 @@ function ArenaInner() {
       client.disconnect();
       wsRef.current = null;
     };
-  }, [isAuthenticated, agentId, pairId, peerId, addSystemMsg]);
+  }, [isAuthenticated, agentId, pairId, peerId, action, addSystemMsg]);
 
   // ── Coach: SEND STRATEGY handler ────────────────────────────────
   const handleSendStrategy = useCallback(async () => {

@@ -206,15 +206,30 @@ async function validatePairingOp(
           error: { code: "trial_pair_invalid", message: "Pairing not found or not active" },
         };
       }
-      // Verify rule_id is valid
+      // Verify rule_id is valid ("auto" = seed-based selection, always valid)
       const ruleId = payload.rule_id as string;
-      if (!TRIAL_RULES.some((r) => r.id === ruleId)) {
+      if (ruleId !== "auto" && !TRIAL_RULES.some((r) => r.id === ruleId)) {
         return {
           event_id: envelope.event_id,
           result_ts: now,
           status: "rejected",
           error: { code: "trial_rule_invalid", message: `Unknown rule_id: ${ruleId}` },
         };
+      }
+      // Reject if an active trial already exists for this pair
+      if (deps.trialsRepo) {
+        const existingTrials = await deps.trialsRepo.getByPairId(pairId);
+        const hasActive = existingTrials.some(
+          (t) => t.status === "created" || t.status === "started",
+        );
+        if (hasActive) {
+          return {
+            event_id: envelope.event_id,
+            result_ts: now,
+            status: "rejected",
+            error: { code: "trial_already_active", message: "An active trial already exists for this pairing" },
+          };
+        }
       }
       break;
     }
