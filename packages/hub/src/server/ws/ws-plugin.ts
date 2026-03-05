@@ -384,6 +384,7 @@ async function wsPluginImpl(app: FastifyInstance): Promise<void> {
             trialsRepo,
             trialResultsRepo,
             agentStatsRepo,
+            agentRepo,
             getAgentPubkey: async (id: string) => {
               const agent = await agentRepo.findById(id);
               return agent?.pubkey ?? null;
@@ -398,6 +399,7 @@ async function wsPluginImpl(app: FastifyInstance): Promise<void> {
               loser_agent_id: settlement.loserId,
               xp_winner: settlement.xpWinner,
               xp_loser: settlement.xpLoser,
+              badges_granted: settlement.badgesGranted,
             };
             const settledFrame: WsFrame = {
               type: "event",

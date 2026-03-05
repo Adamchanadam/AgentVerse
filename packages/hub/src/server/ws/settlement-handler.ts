@@ -10,11 +10,18 @@ import { verifyVerdictSignature, type SignedVerdict } from "@agentverse/shared";
 import type { TrialsRepository } from "../../db/repositories/trials.repository.js";
 import type { TrialResultsRepository } from "../../db/repositories/trial-results.repository.js";
 import type { AgentStatsRepository } from "../../db/repositories/agent-stats.repository.js";
+import type { AgentRepository } from "../../db/repositories/agent.repository.js";
+
+/** MVP badge IDs — match PNG asset filenames in manifest */
+export const BADGE_FIRST_MATCH = "badge_first_match";
+export const BADGE_FIRST_WIN = "badge_first_win";
+export const BADGE_FIRST_DEFENSE = "badge_first_defense";
 
 export interface SettlementDeps {
   trialsRepo: TrialsRepository;
   trialResultsRepo: TrialResultsRepository;
   agentStatsRepo: AgentStatsRepository;
+  agentRepo: AgentRepository;
   /** Look up agent pubkey by agent ID */
   getAgentPubkey: (agentId: string) => Promise<string | null>;
 }
@@ -27,6 +34,7 @@ export type SettlementResult =
       loserId: string;
       xpWinner: number;
       xpLoser: number;
+      badgesGranted: Record<string, string[]>;
     }
   | { ok: false; code: string; message: string };
 
@@ -96,11 +104,50 @@ export async function settleTrialReport(
     xpLoser: XP_LOSER,
   });
 
-  // 6. Update agent_stats
+  // 6. Update agent_stats — read pre-update stats for badge eligibility
+  const winnerStatsBefore = await deps.agentStatsRepo.getStats(verdict.winner_agent_id);
+  const loserStatsBefore = await deps.agentStatsRepo.getStats(verdict.loser_agent_id);
+
   await deps.agentStatsRepo.incrementWins(verdict.winner_agent_id);
   await deps.agentStatsRepo.addXp(verdict.winner_agent_id, XP_WINNER);
   await deps.agentStatsRepo.incrementLosses(verdict.loser_agent_id);
   await deps.agentStatsRepo.addXp(verdict.loser_agent_id, XP_LOSER);
+
+  // 7. Badge eligibility check
+  const badgesGranted: Record<string, string[]> = {};
+  const winnerAgent = await deps.agentRepo.findById(verdict.winner_agent_id);
+  const loserAgent = await deps.agentRepo.findById(verdict.loser_agent_id);
+  const winnerExisting = new Set(winnerAgent?.badges ?? []);
+  const loserExisting = new Set(loserAgent?.badges ?? []);
+  const isRuleTrigger = verdict.trigger_event_id !== "timeout";
+
+  // Winner badges
+  const winnerNew: string[] = [];
+  const winnerTotalBefore = (winnerStatsBefore?.wins ?? 0) + (winnerStatsBefore?.losses ?? 0);
+  if (winnerTotalBefore === 0 && !winnerExisting.has(BADGE_FIRST_MATCH)) {
+    winnerNew.push(BADGE_FIRST_MATCH);
+  }
+  if ((winnerStatsBefore?.wins ?? 0) === 0 && !winnerExisting.has(BADGE_FIRST_WIN)) {
+    winnerNew.push(BADGE_FIRST_WIN);
+  }
+  if (isRuleTrigger && !winnerExisting.has(BADGE_FIRST_DEFENSE)) {
+    winnerNew.push(BADGE_FIRST_DEFENSE);
+  }
+  if (winnerNew.length > 0) {
+    await deps.agentRepo.addBadges(verdict.winner_agent_id, winnerNew);
+    badgesGranted[verdict.winner_agent_id] = winnerNew;
+  }
+
+  // Loser badges
+  const loserNew: string[] = [];
+  const loserTotalBefore = (loserStatsBefore?.wins ?? 0) + (loserStatsBefore?.losses ?? 0);
+  if (loserTotalBefore === 0 && !loserExisting.has(BADGE_FIRST_MATCH)) {
+    loserNew.push(BADGE_FIRST_MATCH);
+  }
+  if (loserNew.length > 0) {
+    await deps.agentRepo.addBadges(verdict.loser_agent_id, loserNew);
+    badgesGranted[verdict.loser_agent_id] = loserNew;
+  }
 
   return {
     ok: true,
@@ -109,5 +156,6 @@ export async function settleTrialReport(
     loserId: verdict.loser_agent_id,
     xpWinner: XP_WINNER,
     xpLoser: XP_LOSER,
+    badgesGranted,
   };
 }

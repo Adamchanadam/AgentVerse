@@ -1,4 +1,4 @@
-import { eq, ilike, and, count } from "drizzle-orm";
+import { eq, ilike, and, count, sql } from "drizzle-orm";
 import { agents, type Agent, type NewAgent, type VisibilityType } from "../schema.js";
 import type { Db } from "../index.js";
 
@@ -87,6 +87,27 @@ export class AgentRepository {
       ? and(eq(agents.visibility, "public"), ilike(agents.displayName, `%${query}%`))
       : eq(agents.visibility, "public");
     return this.db.select().from(agents).where(condition).limit(limit).offset(offset);
+  }
+
+  /**
+   * Add badges to an agent's badges array (deduplicates).
+   * Returns the updated agent.
+   */
+  async addBadges(agentId: string, newBadges: string[]): Promise<Agent | null> {
+    const agent = await this.findById(agentId);
+    if (!agent) return null;
+    const existing = new Set(agent.badges ?? []);
+    const merged = [...existing];
+    for (const b of newBadges) {
+      if (!existing.has(b)) merged.push(b);
+    }
+    if (merged.length === (agent.badges?.length ?? 0)) return agent; // no change
+    const [updated] = await this.db
+      .update(agents)
+      .set({ badges: merged, updatedAt: sql`now()` })
+      .where(eq(agents.id, agentId))
+      .returning();
+    return updated ?? null;
   }
 
   /**

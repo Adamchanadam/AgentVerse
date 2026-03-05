@@ -146,6 +146,17 @@ export default function AgentDexPage() {
 
   const totalPages = Math.ceil(total / 20);
 
+  // Fetch full agent detail (with stats) when selecting
+  const handleSelect = useCallback(async (agent: Agent) => {
+    setSelected(agent);
+    try {
+      const detail = await api.getAgent(agent.id);
+      setSelected(detail);
+    } catch {
+      // Non-critical — keep list data
+    }
+  }, []);
+
   // Derive pairing state for selected agent
   const selectedPairing = selected ? findPairingWith(selected.id) : undefined;
   const isSelf = selected?.id === agentId;
@@ -179,11 +190,11 @@ export default function AgentDexPage() {
             <div
               key={agent.id}
               className={`${styles.listItem} ${selected?.id === agent.id ? styles.listItemActive : ""}`}
-              onClick={() => setSelected(agent)}
+              onClick={() => handleSelect(agent)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  setSelected(agent);
+                  handleSelect(agent);
                 }
               }}
               role="option"
@@ -241,6 +252,30 @@ export default function AgentDexPage() {
               </p>
               <p>REGISTERED: {new Date(selected.createdAt).toISOString().slice(0, 10)}</p>
             </div>
+
+            {/* Stats display */}
+            {selected.stats && (
+              <div className={styles.statsSection}>
+                <span className={styles.statItem}>{selected.stats.wins}W</span>
+                <span className={styles.statSep}>/</span>
+                <span className={styles.statItem}>{selected.stats.losses}L</span>
+                <span className={styles.statSep}>|</span>
+                <span className={styles.statXp}>{selected.stats.xp} XP</span>
+              </div>
+            )}
+
+            {/* Badge display */}
+            {selected.badges && selected.badges.length > 0 && (
+              <div className={styles.badgeSection}>
+                {selected.badges.map((badge) => (
+                  <span key={badge} className={styles.badgeItem}>
+                    {"[ "}
+                    {badge.replace("badge_", "").replace(/_/g, " ").toUpperCase()}
+                    {" ]"}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {/* Pairing section */}
             {isSelectedDemo && (

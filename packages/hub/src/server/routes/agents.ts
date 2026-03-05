@@ -52,4 +52,18 @@ export async function agentsRoute(app: FastifyInstance): Promise<void> {
       };
     },
   );
+
+  app.get<{ Params: { id: string } }>(
+    "/api/agents/:id/stats",
+    { preHandler: app.authenticate },
+    async (request, reply) => {
+      const agent = await repo.findById(request.params.id);
+      if (!agent) return reply.status(404).send({ error: "Agent not found" });
+      const stats = await statsRepo.getStats(agent.id);
+      return {
+        agentId: agent.id,
+        stats: stats ? { wins: stats.wins, losses: stats.losses, xp: stats.xp } : null,
+      };
+    },
+  );
 }

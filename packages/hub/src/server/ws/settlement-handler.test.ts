@@ -13,7 +13,13 @@ import { PairingRepository } from "../../db/repositories/pairing.repository.js";
 import { TrialsRepository } from "../../db/repositories/trials.repository.js";
 import { TrialResultsRepository } from "../../db/repositories/trial-results.repository.js";
 import { AgentStatsRepository } from "../../db/repositories/agent-stats.repository.js";
-import { settleTrialReport, type SettlementDeps } from "./settlement-handler.js";
+import {
+  settleTrialReport,
+  type SettlementDeps,
+  BADGE_FIRST_MATCH,
+  BADGE_FIRST_WIN,
+  BADGE_FIRST_DEFENSE,
+} from "./settlement-handler.js";
 import type { Db } from "../../db/index.js";
 
 // ─── Test helpers ─────────────────────────────────────────────
@@ -88,6 +94,7 @@ beforeEach(async () => {
     trialsRepo,
     trialResultsRepo,
     agentStatsRepo,
+    agentRepo,
     getAgentPubkey: async (agentId: string) => {
       const agent = await agentRepo.findById(agentId);
       return agent?.pubkey ?? null;
@@ -232,5 +239,86 @@ describe("settleTrialReport", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.code).toBe("sig_mismatch");
+  });
+});
+
+describe("badge grants on settlement", () => {
+  it("first match: both agents get badge_first_match", async () => {
+    const verdict = makeVerdict();
+    const result = await settleTrialReport(signBoth(verdict), deps);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.badgesGranted[winnerId]).toContain(BADGE_FIRST_MATCH);
+    expect(result.badgesGranted[loserId]).toContain(BADGE_FIRST_MATCH);
+
+    // Verify persisted
+    const winnerAgent = await agentRepo.findById(winnerId);
+    expect(winnerAgent!.badges).toContain(BADGE_FIRST_MATCH);
+    const loserAgent = await agentRepo.findById(loserId);
+    expect(loserAgent!.badges).toContain(BADGE_FIRST_MATCH);
+  });
+
+  it("first win: winner gets badge_first_win", async () => {
+    const verdict = makeVerdict();
+    const result = await settleTrialReport(signBoth(verdict), deps);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.badgesGranted[winnerId]).toContain(BADGE_FIRST_WIN);
+    // Loser should NOT get first_win
+    expect(result.badgesGranted[loserId] ?? []).not.toContain(BADGE_FIRST_WIN);
+  });
+
+  it("rule trigger: winner gets badge_first_defense", async () => {
+    // Non-timeout trigger_event_id
+    const verdict = makeVerdict({ trigger_event_id: randomUUID() });
+    const result = await settleTrialReport(signBoth(verdict), deps);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.badgesGranted[winnerId]).toContain(BADGE_FIRST_DEFENSE);
+  });
+
+  it("timeout forfeit: winner does NOT get badge_first_defense", async () => {
+    const verdict = makeVerdict({ trigger_event_id: "timeout" });
+    const result = await settleTrialReport(signBoth(verdict), deps);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.badgesGranted[winnerId] ?? []).not.toContain(BADGE_FIRST_DEFENSE);
+  });
+
+  it("no duplicate badges on second settlement", async () => {
+    // First settlement
+    const verdict1 = makeVerdict();
+    const result1 = await settleTrialReport(signBoth(verdict1), deps);
+    expect(result1.ok).toBe(true);
+
+    // Create new trial for second settlement
+    const pairingRepo = new PairingRepository(db);
+    const pairing2 = await pairingRepo.create({ agentAId: winnerId, agentBId: loserId });
+    await pairingRepo.transitionStatus(pairing2.id, "pending", "active");
+    const trial2 = await trialsRepo.createTrial({
+      pairId: pairing2.id,
+      ruleId: "fw_hello",
+      rulePayload: {},
+      seed: "dd".repeat(32),
+      createdBy: winnerId,
+    });
+    await trialsRepo.transitionStatus(trial2.id, "created", "started");
+
+    const verdict2 = makeVerdict({ match_id: trial2.id });
+    const result2 = await settleTrialReport(signBoth(verdict2), deps);
+    expect(result2.ok).toBe(true);
+    if (!result2.ok) return;
+    // Second settlement should not grant any badges (already have them all)
+    expect(Object.keys(result2.badgesGranted).length).toBe(0);
+
+    // Verify no duplicates in DB
+    const winnerAgent = await agentRepo.findById(winnerId);
+    const badgeCounts = new Map<string, number>();
+    for (const b of winnerAgent!.badges) {
+      badgeCounts.set(b, (badgeCounts.get(b) ?? 0) + 1);
+    }
+    for (const [, cnt] of badgeCounts) {
+      expect(cnt).toBe(1);
+    }
   });
 });
