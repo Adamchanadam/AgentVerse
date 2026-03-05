@@ -1,5 +1,157 @@
 # Session Log
 
+## 2026-03-05 Session 55 — Task 28 Batch D Completion + Phase 2.0 Checkpoint (Claude)
+
+1. Agent & Session ID: Claude_20260305_2000
+2. Summary: Completed remaining Task 28 sub-tasks (28.4 LLM settings page, 28.5 checkpoint). Applied final micro-fix from Codex simulation (requirements.md line 7 "技能樹"→"能力樹"). All Phase 2.0 work complete: 624 tests, 82 files, all gates green.
+
+3. What was done:
+   - **28.4 LLM Provider settings page**: New `/settings` route with MiniMax API key management (save/change/clear), BBS retro styling, NavBar SETTINGS link. Key stored in localStorage only — never sent to Hub.
+   - **28.5 Phase 2.0 Checkpoint**: Full regression passed (typecheck ✅ lint ✅ 624 tests ✅ format:check ✅). Session docs updated.
+   - **Micro-fix**: requirements.md line 7 "技能樹點亮" → "能力樹點亮" (last remaining terminology inconsistency found by Codex simulation)
+
+4. Files changed:
+   - New: `packages/web/src/app/settings/page.tsx`
+   - New: `packages/web/src/app/settings/settings.module.css`
+   - Modified: `packages/web/src/components/NavBar.tsx` (SETTINGS link)
+   - Modified: `.kiro/specs/agentverse/requirements.md` (line 7 micro-fix)
+   - Modified: `dev/SESSION_HANDOFF.md` (Batch D complete)
+   - Modified: `dev/SESSION_LOG.md` (this entry)
+
+5. Verification: typecheck ✅ lint ✅ test 624/624 (82 files) ✅ format:check ✅
+
+---
+
+## 2026-03-05 Session 54b — Full Document Audit Pass 2 + Codex Governance (Claude)
+
+1. Agent & Session ID: Claude_20260305_1700
+2. Summary: Founder 要求全文級重新審查所有文檔。啟動 4 個平行審查 agent 交叉比對 12+ 文件。發現 7 個殘留 ISSUE + 5 個 AMBIGUOUS。全部修正完畢。新建 Codex Briefing 文件。
+
+3. What was done:
+
+   **Second-pass audit (4 parallel agents):**
+   - requirements.md: 3 ISSUES (scope note skill-biased, AC 13.1/13.4 incomplete for three types) + 4 AMBIGUOUS
+   - MASTER_SPEC: CLEAN (§17 correctly rewritten) + 1 ADVISORY (Change History missing correction entry)
+   - design.md + tasks.md: 2 AMBIGUOUS (skills-first label, FutureEventType staleness)
+   - UI/UX + research + governance (8 files): 2 ISSUES (TASK_BRIEF + SESSION_HANDOFF stale "Shadow Learning")
+
+   **Fixes applied:**
+   - requirements.md line 30: Added "trait/knowledge 為平台獨有" clarification
+   - requirements.md AC 13.1: Added pack_type + type-specific source identifiers
+   - requirements.md AC 13.4: Replaced skill-biased metadata examples with generic
+   - requirements.md Phase 2 description: "技能樹" → "能力樹"
+   - requirements.md AC 17.2: "技能樹" → "能力樹" + three types
+   - requirements.md AC 9.4: "GenePack 推薦顯示" → "GenePack 交換提案通知顯示"
+   - TASK_BRIEF line 206: "Shadow Learning preview" → "GenePack Exchange Preview"
+   - SESSION_HANDOFF line 120: "Shadow Learning (7.8)" → "GenePack Exchange Preview (7.8)"
+   - design.md line 15: "GenePack skills-first" → "GenePack pointers-only" with three types
+   - design.md EventType: Split into Phase01/Phase2/Phase3 unions, moved trials.\* to Phase2
+   - MASTER_SPEC Change History: Added 2026-03-05 §17 correction entry
+
+   **New file: `dev/CODEX_BRIEFING.md`**
+   - Mandatory onboarding document for Codex
+   - Contains: corrected GenePack definition, platform philosophy, incident record (INC-20260305), SSOT reading order, suggestion format requirements
+   - Referenced from AGENTS.md §1b (item 4)
+
+4. Remaining AMBIGUOUS items (deferred to Phase 3 design):
+   - AC 14.3: Verification criteria for trait/knowledge types (define when implementing)
+   - AC 24.1: Fusion Lab cross-type compatibility rules (define when implementing)
+
+5. Files changed:
+   - Modified: `.kiro/specs/agentverse/requirements.md` (6 edits)
+   - Modified: `.kiro/specs/agentverse/design.md` (2 edits: label + EventType)
+   - Modified: `dev/ui-ux/TASK_BRIEF_ARENA_WIREFRAME.md` (1 edit)
+   - Modified: `dev/SESSION_HANDOFF.md` (1 edit)
+   - Modified: `dev/PROJECT_MASTER_SPEC.md` (1 edit: Change History)
+   - Modified: `AGENTS.md` (1 edit: §1b item 4)
+   - New: `dev/CODEX_BRIEFING.md`
+
+---
+
+## 2026-03-05 Session 54 — GenePack Definition Correction + Governance Hardening (Claude)
+
+1. Agent & Session ID: Claude_20260305_1600
+2. Summary: Founder (Adam) identified fundamental misalignment in GenePack definition across all agents. Codex had proposed "Shadow Learning" (coaching strategy extraction from Prompt Brawl), which contradicted requirements.md's correct definition (DNA ability package = skill/trait/knowledge, Agent-to-Agent exchange). Executed systematic 4-task correction across 12+ files + added 3 governance safeguards to prevent recurrence.
+
+3. Root Cause (INC-20260305):
+   - RC-1: Codex (Product Advisor) didn't cross-check requirements.md SSOT before proposing §17 schema
+   - RC-2: Claude Code (Orchestrator) accepted Codex's §17 proposal without SSOT consistency verification
+   - RC-3: No mechanism existed to lock foundational definitions from being overwritten
+
+4. What was done:
+
+   **Task #15 — Governance Fixes:**
+   - AGENTS.md §1b: Added rules 5-6 (Advisor must quote existing SSOT definition when proposing changes)
+   - AGENTS.md §1c (NEW): Orchestrator Acceptance Gate (cross-check before incorporating proposals)
+   - AGENTS.md §1d (NEW): SSOT Definition Lock (glossary, core experience, data flows, security boundaries locked — Founder approval required)
+   - PQS §3b: Added Codex constraint (must quote SSOT when proposing changes)
+
+   **Task #16 — Foundation Fixes:**
+   - requirements.md: Expanded GenePack glossary to three types (skill/trait/knowledge) with trait safety boundary
+   - requirements.md: Added platform philosophy section ("Agent 的訓練學院 / 興趣班")
+   - requirements.md Req 13: Added rule 7 (trait/knowledge are platform-exclusive, not from ClawHub/GitHub)
+
+   **Task #17 — Spec Fixes:**
+   - PROJECT_MASTER_SPEC §17: Complete rewrite — removed prompt_template/attack/defense/utility, added pack_type/trait_ref/knowledge_domain/skill_source/skill_ref, added §17.3 source layering table, §17.4 safety boundary, §17.5 backpack UI concept
+   - design.md: Expanded gene_packs DB schema with pack_type, skill_source, skill_ref, trait_ref, knowledge_domain, source_agent_id, exchange_event_id, visibility, tags columns
+   - tasks.md B3: Corrected DoD from "extract from Brawl match" to "Agent-to-Agent exchange with three types"
+
+   **Task #18 — Downstream Fixes:**
+   - wireframe_specs.md §7.8: Replaced "Shadow Learning Preview" with "GenePack Exchange Preview" (Mabinogi-style backpack)
+   - TASK_BRIEF_ARENA_WIREFRAME.md §7.8: Same replacement
+   - market-analysis: Fixed line 41 (removed "Imitation Learning → GenePack" association)
+   - PQS Dimensions 1+5: Added Growth Layer criteria and Fun Layer vs Growth Layer distinction
+   - SESSION_HANDOFF.md: Updated B3 reference
+   - MEMORY.md: Added GenePack correction section with full definition
+
+5. Key decisions:
+   - GitHub as additional skill source confirmed for Post-MVP (already in requirements.md line 28)
+   - trait and knowledge are AgentVerse platform-exclusive (key differentiation from ClawHub)
+   - Mabinogi MMORPG pet backpack UI as GenePack inventory reference
+   - Fun Layer (XP, badges) and Growth Layer (GenePack exchange) are independent but coexisting
+   - trait MUST NOT contain PII (phone, email, address, IP, ID numbers, passwords)
+
+6. Verification: All changes are documentation-only (no code impact — GenePack is Phase 3)
+
+7. Files changed:
+   - Modified: `AGENTS.md` (§1b rules 5-6, new §1c, new §1d)
+   - Modified: `dev/PRODUCT_QUALITY_STANDARD.md` (§3b Codex constraint, Dimensions 1+5)
+   - Modified: `.kiro/specs/agentverse/requirements.md` (glossary, platform philosophy, Req 13.7)
+   - Modified: `dev/PROJECT_MASTER_SPEC.md` (§17 complete rewrite)
+   - Modified: `.kiro/specs/agentverse/design.md` (gene_packs schema expansion)
+   - Modified: `.kiro/specs/agentverse/tasks.md` (B3 correction)
+   - Modified: `dev/ui-ux/wireframe_specs.md` (§7.8 replacement)
+   - Modified: `dev/ui-ux/TASK_BRIEF_ARENA_WIREFRAME.md` (§7.8 replacement)
+   - Modified: `dev/research/market-analysis-2026-03.md` (line 41 fix)
+   - Modified: `dev/SESSION_HANDOFF.md` (B3 reference)
+
+8. Next priorities:
+   1. Task 28.4: LLM Provider settings page implementation
+   2. Task 28.5: Phase 2.0 Checkpoint (regression + session docs)
+   3. Codex re-alignment briefing (provide corrected definitions for next Codex session)
+
+---
+
+## 2026-03-05 Session 53 — Arena + Settings UI/UX Design Specifications (Antigravity)
+
+1. Agent & Session ID: Antigravity_20260305_1045
+2. Summary: 根據 Claude Code 與 Codex 在 TASK_BRIEF_ARENA_WIREFRAME.md 中的指示，補齊 Arena（Prompt Brawl）畫面與 Settings 的正式 wireframe 及 Coach Console 的交互設計規格。不涉及任何程式碼修改，純為設計資產建構。
+3. What was done:
+   - **Deliverable 1 (Arena Wireframe)**: 在 `dev/ui-ux/wireframe_specs.md` 追加 Section 7，明定 3 欄式佈局（Coach/Chat/Danger），定義 Status Bar、Result Overlay、Mobile Adaptation 以及為後續擴充預留的 Shadow Learning Preview (7.8) 和 Spectator Layout (7.9)。
+   - **Deliverable 2 (Coach Console UX)**: 新建 `dev/ui-ux/coach_console_ux.md`，定義人機協作 3-step 可視化機制（1. Coach Input, 2. Agent Processing, 3. Response Execution），確保玩家策略與 Agent 輸出具備清晰的因果關係與實體邊界。
+   - **Deliverable 3 (Settings Wireframe)**: 在 `dev/ui-ux/wireframe_specs.md` 追加 Section 8，指定 LLM API 儲存的隱私安全提示及輸入版塊 UI。
+   - 遵守 `design_tokens.md` 鐵則：無圓角、實色硬陰影、256-Color ANSI 色系、Ascii Spinner。
+4. Key decisions:
+   - 區分 Coach 歷史紀錄區與 Chat 聊天區，保證視覺獨立性。
+   - 使用 Terminal 閃爍游標及 ASCII 讀取動畫取代現代化 SVG loader，落實硬派 BBS 風格。
+5. Verification: 設計文件與 Token 規範契合度、[FUTURE] Tag 檢查完成 ✅。
+6. Files changed:
+   - Modified: `dev/ui-ux/wireframe_specs.md` (+ Section 7, Section 8)
+   - New: `dev/ui-ux/coach_console_ux.md`
+7. Next: 將前端實作任務交還予 Claude Code（Orchestrator）。
+
+---
+
 ## 2026-03-04 Session 52 — Tasks 25-27: Prompt Brawl Full Implementation (Claude)
 
 1. Agent & Session ID: Claude_20260304_2000

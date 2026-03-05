@@ -14,7 +14,7 @@
 
 1. Product / System Layer: AgentVerse Hub + OpenClaw Channel Plugin `agentverse` + Local Trials Runner
 2. Development Governance Layer: AGENTS.md 治理框架 + Kiro spec-driven workflow
-3. Current task belongs to which layer: Product（**Phase 2 Batch A/B/C 完成 ✅**；615/615 tests，82 files）
+3. Current task belongs to which layer: Product（**Phase 2 Batch A/B/C/D 完成 ✅**；624/624 tests，82 files）
 4. Known layer-boundary risks: OpenClaw plugin manifest/channel 規格已對齊 v2026.3.1 官方 codebase（Session 38 修正 9 項 misalignment + Session 39 深度審計修正 7 項）；持續監控後續版本變化
 
 ## Mandatory Start Checklist
@@ -40,11 +40,13 @@
    - Task 26：Browser Trials Runner ✅（609 tests — state machine, LLM provider, digest chain, verdict coordinator）
    - Task 27：Arena UI ✅（615 tests — Arena page, DangerMeter, AgentDex challenge, Codex review fixes）
    - 2 Codex reviews completed（12 findings: 10 fixed, 2 deferred by design）
-3. **Phase 2.0 Batch D — Progression（下一步）**：
-   - Task 28：XP + badges + stats + LLM settings + Phase 2.0 Checkpoint
-   - Spec SSOT：PROJECT_MASTER_SPEC §16-17 + tasks.md Task 28
-   - Risk Register：`dev/RISK_REGISTER_PHASE2.md`（7 risks）
-4. **Phase 3 Backlog**：B3 GenePack 交換（schema 已定義 §17）、B4 Lineage、B5 Fusion Lab
+3. **Phase 2.0 Batch D — Progression ✅ 完成**（Task 28，624 tests）：
+   - 28.1：XP calculation + GET /api/agents/:id/stats endpoint ✅
+   - 28.2：Badge system (grant logic in settlement handler) ✅
+   - 28.3：AgentDex stats display (XP level + badge icons) ✅
+   - 28.4：LLM Provider settings page (MiniMax API key management) ✅
+   - 28.5：Phase 2.0 Checkpoint ✅
+4. **Phase 3 Backlog**：B3 GenePack 交換（三種類型 skill/trait/knowledge，schema 已修正對齊 §17）、B4 Lineage、B5 Fusion Lab
 5. **Phase 2+ 建議**：Security headers、scope-based middleware、Redis NonceStore、Elo rating
 
 ## Known Risks / Blockers
@@ -59,7 +61,7 @@
 
 1. Required checks: `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check`
 2. Current failing checks (if any): 1 pre-existing flaky PBT timeout (P5 server_seq Monotonic — passes in isolation, times out under full suite resource contention)
-3. Test count: 615（82 files）
+3. Test count: 624（82 files）
 4. Release / merge blocking conditions: N/A
 
 ## Antigravity（UI/UX Design Agent）交接狀態
@@ -111,6 +113,14 @@
 - `dev/ui-ux/phase8_addendum.md` 新增，包含 `frame_basic.png` 的 `border-image` CSS 範例與 Avatar MVP 決定性分配邏輯 (Hash based)。
 - 更新 `dev/ui-ux/README.md`。
 
+### Arena + Settings 設計規格（2026-03-05 第四次交付 ✅）
+
+- **Wireframe 追加**：於 `dev/ui-ux/wireframe_specs.md` 新增 Section 7 (Arena) 與 Section 8 (Settings)。
+  - **Arena**：明定 3-column game board 佈局（Coach Console, Chat Panel, Danger Meter），支援響應式 (sm 1-col, md 2-col, lg 3-col)。
+  - **Settings**：新增 LLM API Key 配置介面，含隱私宣告與測試按鈕。
+- **UX 規格**：新建 `dev/ui-ux/coach_console_ux.md`，定義 Prompt Brawl 的人機與代理協作 3 步驟可視化流程（輸入 → 思考（ASCII spinner） → 回應）。
+- **[FUTURE] 標記**：GenePack Exchange Preview (7.8) 與 Spectator Mode (7.9) 佈局藍圖均已佔位標記，待 Phase 3 實作。
+
 ### Asset Gen CLI（已完成 ✅ + INC-20260302 修復）
 
 - **5 modules** in `tools/asset-gen/src/`：types, yaml-parser, manifest-generator, placeholder-gen, cli
@@ -140,27 +150,26 @@ This file and `dev/SESSION_LOG.md` must be updated at the end of every session. 
 
 ## Last Session Record
 
-1. UTC date: 2026-03-04
-2. Session ID: Claude_20260304_2000
+1. UTC date: 2026-03-05
+2. Session ID: Claude_20260305_2000
 3. Completed:
-   - **Task 25: Match Orchestration (Batch A)** ✅ — trials types, DB schema, rules engine, repositories, settlement handler, E2E test (558 tests)
-   - **Task 26: Browser Trials Runner (Batch B)** ✅ — match state machine, LLM provider (MiniMax M2.5), transcript digest chain, verdict coordinator, brawl-message type (609 tests)
-   - **Task 27: Arena UI (Batch C)** ✅ — Arena page (3-column coach/chat/danger), DangerMeter, AgentDex challenge integration, NavBar ARENA link (615 tests)
-   - **Hub Prerequisites** — trials.started auto-broadcast, agent stats in REST API
-   - **2 Codex Reviews** — 12 findings total (10 fixed, 2 deferred by design)
-4. Pending: Task 28 Progression (Batch D); branch `phase2-batch-b-trials-runner` ready for PR
+   - **Task 25-27 (Batch A/B/C)** ✅ — Prompt Brawl backend + browser trials runner + Arena UI (615 tests)
+   - **Task 28 (Batch D) Progression** ✅ — XP calculation, badge system, AgentDex stats display, LLM settings page (624 tests)
+   - **INC-20260305 GenePack Correction** — 4-task systematic fix across 12+ files + governance hardening (AGENTS.md §1b-d)
+   - **Full document audit** — 4 parallel auditors, 7 ISSUES + 5 AMBIGUOUS found, all ISSUES fixed
+   - **Codex governance** — Created `dev/CODEX_BRIEFING.md`, verified via simulation (12/12 correct)
+4. Pending: Branch `phase2-batch-b-trials-runner` ready for PR → `main`
 5. Next priorities (max 3):
    - PR: `phase2-batch-b-trials-runner` → `main`
-   - Task 28 Progression（Batch D — XP + badges + stats + LLM settings）
-   - Phase 2.0 Checkpoint
+   - Phase 3 planning (GenePack exchange, Lineage, Fusion Lab)
+   - Security hardening (scope middleware, Redis NonceStore)
 6. Risks / blockers:
    - TTL-mode catchup 未 JOIN offline_messages（不影響目前功能）
    - Agent scope 尚未強制權限隔離（延後至 Phase 2+）
    - Client-side LLM API key 存 localStorage（XSS 風險，見 Risk Register R3）
    - Turn timer client-side only, no Hub enforcement (Risk R4)
    - 1 pre-existing flaky PBT (P5 server_seq Monotonic timeout under full suite)
-   - Stray `-` file in repo root (harmless, untracked)
-7. Validation: typecheck ✅ lint ✅ test 615/615 (82 files) ✅ format:check ✅
+7. Validation: typecheck ✅ lint ✅ test 624/624 (82 files) ✅ format:check ✅
 
 ### Previous Session Reference（Claude_20260302_2000）
 

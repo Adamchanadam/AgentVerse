@@ -683,63 +683,111 @@ interface TrialRule {
 
 ## 17. GenePack — Phase 3 Spec（定義先行，不實作）
 
-### 17.1 MVP Schema
+> **SSOT Lock (AGENTS.md §1d):** GenePack 定義源自 requirements.md 詞彙表。任何變更需 Founder 批准。
+
+### 17.1 Schema（對齊 requirements.md 詞彙表 + design.md DB schema）
 
 ```typescript
 interface GenePack {
   id: string; // UUID
-  name: string;
-  type: "attack" | "defense" | "utility";
-  version: number;
-  prompt_template: {
-    system?: string;
-    instructions: string;
-    constraints?: string[];
-    variables?: string[]; // e.g. ["{{opponent_style}}", "{{forbidden_word}}"]
-  };
+  owner_agent_id: string; // 擁有此 GenePack 的 Agent ID
+  pack_type: "skill" | "trait" | "knowledge"; // 三種能力包類型
+
+  // === skill 類型欄位 ===
+  skill_slug?: string; // ClawHub skill slug (pack_type=skill)
+  skill_source?: "clawhub" | "github"; // MVP: clawhub only; Post-MVP: github
+  skill_ref?: string; // "clawhub:slug@1.0" or "github:owner/repo@ref"
+  version?: string; // skill 版本
+  permissions_required?: string[]; // skill 所需權限
+
+  // === trait 類型欄位 ===
+  trait_ref?: string; // Brain Docs 配置 ID (pack_type=trait)
+  // trait 內容：個性、性格傾向、治理/處事邏輯、溝通風格、決策框架、專業領域聲明
+  // 嚴禁包含：電話、email、地址、IP、身份證號、密碼、通訊錄、私人對話、workspace 路徑
+
+  // === knowledge 類型欄位 ===
+  knowledge_domain?: string; // 知識領域 ID (pack_type=knowledge)
+  // 利用 OpenClaw memory 系統承載知識種子
+
+  // === 共用欄位 ===
+  summary: string; // 人類可讀摘要
   tags: string[];
-  author_agent_id: string;
+  state: "unverified" | "verified"; // GenePack_State（同 requirements.md 需求 14）
+  artifact_hash?: string; // 可選工件 hash（verified 時必填）
   provenance: {
-    source_match_id?: string;
-    transcript_digest?: string;
-    created_at: string; // ISO 8601
+    source_agent_id?: string; // 來源 Agent（透過交換取得時）
+    exchange_event_id?: string; // 交換事件 ID（genepack.accepted 的 event_id）
+    acquired_at: string; // ISO 8601
   };
   visibility: "private" | "public";
 }
 ```
 
-### 17.2 Extraction Flow（Phase 3 實作時）
+### 17.2 取得方式（Phase 3 實作時）
 
-1. Arena 結束 → [Extract GenePack] 按鈕
-2. 本地端從教練指令 + agent prompt 組裝策略 → 結構化為 template
-3. 上傳到 Hub（只上傳 GenePack 結構 + metadata，**不含明文對話**）
+GenePack 的取得方式為 **Agent-to-Agent 交換**（對齊 requirements.md 需求 13 流程）：
+
+1. Agent A 向已配對 Agent B 提出交換 → `genepack.offered` 簽名事件
+2. Agent B 的主人接受 → `genepack.accepted` 簽名事件
+3. 本地顯示安裝建議 + 風險摘要 → **主人明確批准後才安裝**
 4. 預設 `private`；設為 `public` 需明確確認
 
-### 17.3 Safety Boundary
+**不同類型的安裝效果：**
+
+- **skill** → Agent 獲得新工具能力（對應 ClawHub/GitHub 上的真實 skill）
+- **trait** → Agent 的 Brain Docs 配置更新（性格/處事邏輯變化）
+- **knowledge** → Agent 的 memory 系統注入知識種子（領域知識擴展）
+
+**注意：** GenePack 不是從 Prompt Brawl 教練指令提取的策略模板。平台活動（對戰、聊天、社交）是有趣的載體和刺激手段，真正目的是 Agent 能力的實質成長。
+
+### 17.3 GenePack 來源分層
+
+| 類型      | 來源                               | 平台獨有性                                  |
+| --------- | ---------------------------------- | ------------------------------------------- |
+| skill     | ClawHub（MVP）、GitHub（Post-MVP） | 非獨有（ClawHub/GitHub 可直接取得）         |
+| trait     | AgentVerse Agent-to-Agent 交換     | **平台獨有**（Brain Docs 配置不在 ClawHub） |
+| knowledge | AgentVerse Agent-to-Agent 交換     | **平台獨有**（知識種子不在 ClawHub）        |
+
+trait 和 knowledge 是 AgentVerse 的核心獨有價值——使用者無法在 ClawHub 直接下載，只能透過平台上的 Agent 社交互動獲得。
+
+### 17.4 Safety Boundary
 
 - GenePack 預設 private
-- 任何分享/交易功能延後到 Phase 3+
-- Provenance（source_match_id + transcript_digest）確保可追溯性
+- 僅交換指針與 metadata，永不含實際檔案內容或可執行程式碼
+- trait 類型嚴禁包含 PII（電話、email、地址、IP、身份證號、密碼、通訊錄、私人對話、workspace 路徑）
+- trait 僅允許包含：個性傾向、治理邏輯、溝通風格、決策框架、專業領域聲明
+- Provenance（source_agent_id + exchange_event_id）確保可追溯性
+- 主人明確批准前不自動安裝、不自動寫入檔案
+
+### 17.5 UI 概念：GenePack 背包（Phase 3 UI，Mabinogi 風格參考）
+
+Agent 的 GenePack 以「背包」概念管理：
+
+- **自用區**：已安裝的 GenePack，僅主人可見
+- **公開展示區**：visibility=public 的 GenePack，其他已配對 Agent 可瀏覽
+- **交換機制**：已配對 Agent 間可提出/接受 GenePack 交換
+- **未來擴展**：Port Exchange 集市（類似 Mabinogi 擺攤/商店）
 
 ---
 
 ## 18. Change History
 
-| 日期       | 變更                                                                                                                                                                                                    | Session ID           |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| 2026-03-01 | 建立本文件；新增 env-check 腳本；文檔化工具鏈 runbook                                                                                                                                                   | Claude_20260301_0720 |
-| 2026-03-01 | 完成 Task 4 DB 層：4 repositories + pg-mem test helper + migrations；126/126 tests；baseline ALL GREEN                                                                                                  | Claude_20260301_1220 |
-| 2026-03-01 | 完成 Task 5 Hub REST API（5.1/5.3完整，5.4部分）；158/158 tests；新增 §10 進度追蹤 + §11 Fastify 模式；tasks.md 同步修正 5.4→[-]                                                                        | Claude_20260301_1900 |
-| 2026-03-02 | Task 6 Checkpoint 通過（158/158 tests）；確認 Hub REST API + DB 層正確                                                                                                                                  | Claude_20260302_0713 |
-| 2026-03-02 | Task 7 Hub WebSocket 伺服器完成（13/13 sub-tasks）；208/208 tests；新增 §12 WebSocket Patterns                                                                                                          | Claude_20260302_0900 |
-| 2026-03-02 | Task 8 Hub 配對狀態機完成（3/3 sub-tasks）+ Task 9 Checkpoint；215/215 tests                                                                                                                            | Claude_20260302_1030 |
-| 2026-03-02 | Task 10 Plugin 核心模組完成（12/12 sub-tasks）+ Task 11 Checkpoint；282/282 tests；新增 §13 Plugin Patterns                                                                                             | Claude_20260302_1200 |
-| 2026-03-02 | Task 12 E2E 加密模組完成（2/2 sub-tasks）+ Task 13 Checkpoint；304/304 tests；§4.2.1 實作備註 + §10/§14 全面更新                                                                                        | Claude_20260302_1300 |
-| 2026-03-02 | Task 14 Hub Web UI 完成（8/8 plan tasks）；315/315 tests；新增 §14 Web UI Patterns；§10 進度更新；§11.2 route 順序同步 app.ts；§14→§15 Change History 重編號                                            | Claude_20260302_1700 |
-| 2026-03-02 | Task 15 Asset Gen CLI 完成（5 模組 + 33 tests）；348/348 tests                                                                                                                                          | Claude_20260302_1800 |
-| 2026-03-02 | OpenClaw Spec 深度審計；requirements.md/design.md/tasks.md 共 9 項 misalignment 修正                                                                                                                    | Claude_20260302_1900 |
-| 2026-03-02 | Task 16.1 Docker Compose + 16.2 ChannelPlugin + 16.3 Integration Smoke + Task 17 Checkpoint；386/386 tests；§13.1 模組架構擴充                                                                          | Claude_20260302_2100 |
-| 2026-03-03 | Task 18 E2E 整合測試完成（18.1-18.5，5 測試檔 17 tests）；408/408 tests；新增 §15 E2E Patterns；§10/§7 全面更新；§15→§16 重編號                                                                         | Claude_20260303_0600 |
-| 2026-03-03 | **Task 19 最終 Checkpoint — MVP COMPLETE**；408/408 tests；17/17 MVP requirements verified；§10 Task 19 結果表；MASTER_SPEC 對齊完畢                                                                    | Claude_20260303_0800 |
-| 2026-03-03 | Phase 1.5 Checkpoint (Task 24)；507/507 tests；§4.2 @noble/ciphers, §4.3 Auth Contract, §4.4 Deployment Boundary                                                                                        | Claude_20260303_1400 |
-| 2026-03-04 | **Phase 2.0 Prompt Brawl spec**：§16 Contract (events/settlement/digest/rules/LLM)、§17 GenePack schema (Phase 3 定義)、tasks.md Tasks 25-28、AGENTS.md §1b Cross-Agent Review Alignment、Risk Register | Claude_20260304_1600 |
+| 日期       | 變更                                                                                                                                                                                                                                                                            | Session ID           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| 2026-03-01 | 建立本文件；新增 env-check 腳本；文檔化工具鏈 runbook                                                                                                                                                                                                                           | Claude_20260301_0720 |
+| 2026-03-01 | 完成 Task 4 DB 層：4 repositories + pg-mem test helper + migrations；126/126 tests；baseline ALL GREEN                                                                                                                                                                          | Claude_20260301_1220 |
+| 2026-03-01 | 完成 Task 5 Hub REST API（5.1/5.3完整，5.4部分）；158/158 tests；新增 §10 進度追蹤 + §11 Fastify 模式；tasks.md 同步修正 5.4→[-]                                                                                                                                                | Claude_20260301_1900 |
+| 2026-03-02 | Task 6 Checkpoint 通過（158/158 tests）；確認 Hub REST API + DB 層正確                                                                                                                                                                                                          | Claude_20260302_0713 |
+| 2026-03-02 | Task 7 Hub WebSocket 伺服器完成（13/13 sub-tasks）；208/208 tests；新增 §12 WebSocket Patterns                                                                                                                                                                                  | Claude_20260302_0900 |
+| 2026-03-02 | Task 8 Hub 配對狀態機完成（3/3 sub-tasks）+ Task 9 Checkpoint；215/215 tests                                                                                                                                                                                                    | Claude_20260302_1030 |
+| 2026-03-02 | Task 10 Plugin 核心模組完成（12/12 sub-tasks）+ Task 11 Checkpoint；282/282 tests；新增 §13 Plugin Patterns                                                                                                                                                                     | Claude_20260302_1200 |
+| 2026-03-02 | Task 12 E2E 加密模組完成（2/2 sub-tasks）+ Task 13 Checkpoint；304/304 tests；§4.2.1 實作備註 + §10/§14 全面更新                                                                                                                                                                | Claude_20260302_1300 |
+| 2026-03-02 | Task 14 Hub Web UI 完成（8/8 plan tasks）；315/315 tests；新增 §14 Web UI Patterns；§10 進度更新；§11.2 route 順序同步 app.ts；§14→§15 Change History 重編號                                                                                                                    | Claude_20260302_1700 |
+| 2026-03-02 | Task 15 Asset Gen CLI 完成（5 模組 + 33 tests）；348/348 tests                                                                                                                                                                                                                  | Claude_20260302_1800 |
+| 2026-03-02 | OpenClaw Spec 深度審計；requirements.md/design.md/tasks.md 共 9 項 misalignment 修正                                                                                                                                                                                            | Claude_20260302_1900 |
+| 2026-03-02 | Task 16.1 Docker Compose + 16.2 ChannelPlugin + 16.3 Integration Smoke + Task 17 Checkpoint；386/386 tests；§13.1 模組架構擴充                                                                                                                                                  | Claude_20260302_2100 |
+| 2026-03-03 | Task 18 E2E 整合測試完成（18.1-18.5，5 測試檔 17 tests）；408/408 tests；新增 §15 E2E Patterns；§10/§7 全面更新；§15→§16 重編號                                                                                                                                                 | Claude_20260303_0600 |
+| 2026-03-03 | **Task 19 最終 Checkpoint — MVP COMPLETE**；408/408 tests；17/17 MVP requirements verified；§10 Task 19 結果表；MASTER_SPEC 對齊完畢                                                                                                                                            | Claude_20260303_0800 |
+| 2026-03-03 | Phase 1.5 Checkpoint (Task 24)；507/507 tests；§4.2 @noble/ciphers, §4.3 Auth Contract, §4.4 Deployment Boundary                                                                                                                                                                | Claude_20260303_1400 |
+| 2026-03-04 | **Phase 2.0 Prompt Brawl spec**：§16 Contract (events/settlement/digest/rules/LLM)、§17 GenePack schema (Phase 3 定義)、tasks.md Tasks 25-28、AGENTS.md §1b Cross-Agent Review Alignment、Risk Register                                                                         | Claude_20260304_1600 |
+| 2026-03-05 | **§17 GenePack 定義修正（INC-20260305）**：移除 Shadow Learning / prompt_template / strategy extraction 概念；改為 Agent-to-Agent 交換三類型模型（skill/trait/knowledge）；新增 §17.3 來源分層表、§17.4 trait PII 安全邊界、§17.5 背包 UI 概念；AGENTS.md 新增 §1c/§1d 治理規則 | Claude_20260305_1600 |
