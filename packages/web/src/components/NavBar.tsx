@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/agentdex", label: "AGENTDEX" },
   { href: "/pairings", label: "PAIRINGS" },
   { href: "/chat", label: "CHAT" },
+  { href: "/arena", label: "ARENA" },
 ] as const;
 
 export function NavBar() {
@@ -35,6 +36,13 @@ export function NavBar() {
       {isAuthenticated && agentId ? (
         <span className={styles.agentBadge}>{agentId.slice(0, 8)}</span>
       ) : null}
+      <Link
+        href="/settings"
+        className={`${styles.link} ${pathname === "/settings" ? styles.active : ""}`}
+        aria-current={pathname === "/settings" ? "page" : undefined}
+      >
+        SETTINGS
+      </Link>
       <Link href="/login" className={styles.link}>
         AUTH
       </Link>

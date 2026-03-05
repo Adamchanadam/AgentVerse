@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { buildApp } from "../app.js";
 import { createTestDb } from "../../db/test-helpers/setup.js";
 import { AgentRepository } from "../../db/repositories/agent.repository.js";
+import { AgentStatsRepository } from "../../db/repositories/agent-stats.repository.js";
 import { TEST_CONFIG } from "../test-config.js";
 
 async function seedAgent(
@@ -113,5 +114,110 @@ describe("GET /api/agents/:id", () => {
     const body = res.json<{ id: string; displayName: string }>();
     expect(body.id).toBe(agent.id);
     expect(body.displayName).toBe("Rogue");
+  });
+
+  it("returns stats: null when agent has no stats", async () => {
+    const repo = new AgentRepository(db);
+    const agent = await seedAgent(repo, { displayName: "NoStats", pubkey: "pk-nostats" });
+    await app.ready();
+    const token = app.jwt.sign({ pubkey: "web-user" });
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/agents/${agent.id}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ id: string; stats: null }>();
+    expect(body.stats).toBeNull();
+  });
+
+  it("returns stats with wins/losses/xp when agent has stats", async () => {
+    const repo = new AgentRepository(db);
+    const statsRepoInst = new AgentStatsRepository(db);
+    const agent = await seedAgent(repo, { displayName: "Champ", pubkey: "pk-champ" });
+    await statsRepoInst.ensureStats(agent.id);
+    await statsRepoInst.incrementWins(agent.id);
+    await statsRepoInst.addXp(agent.id, 100);
+    await app.ready();
+    const token = app.jwt.sign({ pubkey: "web-user" });
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/agents/${agent.id}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ id: string; stats: { wins: number; losses: number; xp: number } }>();
+    expect(body.stats).toEqual({ wins: 1, losses: 0, xp: 100 });
+  });
+});
+
+describe("GET /api/agents/:id/stats", () => {
+  let app: FastifyInstance;
+  let db: ReturnType<typeof createTestDb>;
+
+  beforeEach(() => {
+    db = createTestDb();
+    app = buildApp(TEST_CONFIG, db);
+  });
+
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it("returns 401 without auth", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/agents/some-id/stats" });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("returns 404 for unknown agent", async () => {
+    await app.ready();
+    const token = app.jwt.sign({ pubkey: "web-user" });
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/agents/nonexistent-id/stats",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("returns stats: null when agent has no stats", async () => {
+    const repo = new AgentRepository(db);
+    const agent = await seedAgent(repo, { displayName: "Fresh", pubkey: "pk-fresh" });
+    await app.ready();
+    const token = app.jwt.sign({ pubkey: "web-user" });
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/agents/${agent.id}/stats`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{ agentId: string; stats: null }>();
+    expect(body.agentId).toBe(agent.id);
+    expect(body.stats).toBeNull();
+  });
+
+  it("returns stats object when agent has stats", async () => {
+    const repo = new AgentRepository(db);
+    const statsRepoInst = new AgentStatsRepository(db);
+    const agent = await seedAgent(repo, { displayName: "Veteran", pubkey: "pk-veteran" });
+    await statsRepoInst.ensureStats(agent.id);
+    await statsRepoInst.incrementWins(agent.id);
+    await statsRepoInst.incrementWins(agent.id);
+    await statsRepoInst.incrementLosses(agent.id);
+    await statsRepoInst.addXp(agent.id, 225);
+    await app.ready();
+    const token = app.jwt.sign({ pubkey: "web-user" });
+    const res = await app.inject({
+      method: "GET",
+      url: `/api/agents/${agent.id}/stats`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json<{
+      agentId: string;
+      stats: { wins: number; losses: number; xp: number };
+    }>();
+    expect(body.agentId).toBe(agent.id);
+    expect(body.stats).toEqual({ wins: 2, losses: 1, xp: 225 });
   });
 });

@@ -42,6 +42,11 @@ export function AgentCard({ agent, selected, onClick }: AgentCardProps) {
         </div>
       </div>
       {isDemo(agent) && <span className={styles.demoBadge}>[ DEMO ]</span>}
+      {agent.stats && (
+        <span className={styles.stats}>
+          {agent.stats.wins}W-{agent.stats.losses}L
+        </span>
+      )}
       <div className={styles.tags}>
         {agent.personaTags?.map((tag) => (
           <span key={tag} className={styles.tag}>

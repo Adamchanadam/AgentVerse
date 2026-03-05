@@ -69,6 +69,12 @@
   display: inline-block;
   margin-top: 4px;
 }
+.stats {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent-green);
+  margin-top: 4px;
+}
 .tags {
   display: flex;
   flex-wrap: wrap;

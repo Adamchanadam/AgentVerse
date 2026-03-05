@@ -90,6 +90,9 @@ export { signVerdict, verifyVerdictSignature } from "./verdict.js";
 // Trial rules engine (Prompt Brawl)
 export { TRIAL_RULES, selectRule, evaluateRule, type RuleEvaluationResult } from "./trial-rules.js";
 
+// Transcript digest chain (Prompt Brawl)
+export { initDigest, appendDigest } from "./transcript-digest.js";
+
 // E2E encryption (X25519 + HKDF-SHA-256 + XChaCha20-Poly1305)
 export {
   generateX25519Keypair,

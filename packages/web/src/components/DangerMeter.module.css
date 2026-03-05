@@ -1,0 +1,35 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-base);
+  padding: calc(var(--spacing-base) * 2);
+}
+
+.label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  color: var(--accent-orange);
+  letter-spacing: 2px;
+}
+
+.bar {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-yellow);
+  white-space: pre;
+}
+
+.barHigh {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-orange);
+  white-space: pre;
+  animation: blink 0.5s step-end infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}

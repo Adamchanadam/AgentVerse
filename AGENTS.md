@@ -82,6 +82,7 @@ Any agent operating in an **Advisor / Reviewer / Product Consultant** role (i.e.
 1. Complete the §1 Single Entry reads (`SESSION_HANDOFF.md` → `SESSION_LOG.md` → `PROJECT_MASTER_SPEC.md`)
 2. Read the **active task backlog** (`.kiro/specs/agentverse/tasks.md`) to understand what is planned, in-progress, completed, and explicitly deferred
 3. Read the **current phase scope** as defined in `SESSION_HANDOFF.md` → Open Priorities
+4. Read the **Codex Briefing** (`dev/CODEX_BRIEFING.md`) for corrected product definitions, constraints, incident history, and suggestion format requirements
 
 Hard rules:
 
@@ -89,6 +90,42 @@ Hard rules:
 2. Suggestions that contradict an explicit deferral decision (recorded in `SESSION_LOG.md` or `PROJECT_MASTER_SPEC.md`) must acknowledge the prior decision and argue why it should be revisited
 3. Every suggestion must be tagged with its **scope relationship**: `[IN-SCOPE]` (within current phase), `[ADJACENT]` (related but not in current phase), or `[NEW-DIRECTION]` (entirely new scope)
 4. The receiving developer agent is **not obligated** to implement any suggestion — each goes through the standard §3 PLAN→READ→CHANGE→QC→PERSIST workflow with explicit triage
+5. Any proposal that **redefines, extends, or reinterprets** a glossary term, schema, or core concept defined in `requirements.md` or `design.md` must explicitly **quote the existing definition** and state how the proposal relates to it (extends, replaces, narrows, etc.). Proposals that omit the existing SSOT definition are automatically invalid and must not be accepted by the Orchestrator
+6. Advisor agents must not propose new schemas, flows, or concepts that contradict the foundation layer (`requirements.md`, `design.md`, HC acceptance criteria) without explicitly flagging the contradiction and requesting Founder (Adam) approval for the divergence
+
+---
+
+## 1c) Orchestrator Acceptance Gate (Mandatory)
+
+When the Orchestrator agent (Claude Code) receives suggestions or proposals from an Advisor / Reviewer agent (e.g., Codex), the Orchestrator must perform the following verification **before** incorporating the proposal into any specification, plan, or implementation:
+
+1. **SSOT Cross-Check:** Verify the proposal does not contradict definitions in `requirements.md`, `design.md`, or the active glossary
+2. **Foundation Consistency:** If the proposal introduces or redefines a term, check whether that term already has a canonical definition in the foundation layer
+3. **Scope Verification:** Confirm the proposal falls within the current Phase scope or is explicitly tagged as `[ADJACENT]` / `[NEW-DIRECTION]`
+
+If any check fails, the Orchestrator must:
+
+1. Reject the proposal with a specific citation of the conflicting SSOT definition
+2. Escalate to the Founder (Adam) if the Advisor insists the SSOT definition should change
+3. **Never silently incorporate a proposal that redefines established terms**
+
+---
+
+## 1d) SSOT Definition Lock (Mandatory)
+
+The following categories of definitions, once established in `requirements.md` or `design.md`, are **locked** and cannot be changed by any agent without explicit Founder (Adam) approval:
+
+1. **Glossary terms** — canonical definitions of project concepts (e.g., GenePack, Agent, Pairing, Trial)
+2. **Core experience statements** — what the platform is and what value it provides
+3. **Data flow architectures** — how components exchange data (e.g., pointer-only exchange, E2E encryption model)
+4. **Security boundaries** — what data stays where (e.g., private keys in browser, Hub never sees plaintext)
+
+Agents may **propose** changes to locked definitions, but:
+
+1. The proposal must quote the existing locked definition verbatim
+2. The proposal must explain why the change is necessary
+3. The change must not be applied until Adam explicitly approves
+4. The approval and rationale must be recorded in `SESSION_LOG.md`
 
 ---
 
@@ -445,5 +482,28 @@ To maintain consistent visual standards and seamless collaboration between Desig
 3. **Generated MVP Assets:** All final generated static UI assets for the default package must strictly reside in `packages/hub/public/assets/mvp-default/`.
 
 No agent is permitted to recreate a `ref_doc` or similar scattered folder for UI guidelines.
+
+---
+
+## 14) Product Quality Standard (PQS)
+
+All development agents must reference `dev/PRODUCT_QUALITY_STANDARD.md` when building, reviewing, or optimizing product features. This standard defines 8 evaluation dimensions (Human-Agent Synergy, Visual Appeal, UX Flow, Gameplay Loop, Retention, Virality, Technical Robustness, Accessibility) with checklists, scoring, and minimum thresholds.
+
+Responsibilities:
+
+1. **Codex** (Product Advisor): Maintains PQS; performs evaluations; proposes improvements
+2. **Claude Code** (Orchestrator): Enforces minimum thresholds; integrates PQS into task acceptance
+3. **Antigravity** (UI/UX Designer): Evaluates visual, UX flow, and accessibility dimensions
+4. **Adam** (Founder): Final authority on score disputes and threshold exceptions
+
+PQS evaluation is mandatory at every Phase checkpoint (per §3c Release/Merge Gate).
+
+---
+
+## 15) Reference Knowledge Base
+
+Market research, competitor analysis, trend reports, and design exploration reside in `dev/research/`. This content is advisory only — it informs decisions but is not authoritative.
+
+Only finalized decisions flow into `.kiro/specs/agentverse/` (requirements.md, design.md, tasks.md). Claude Code (Orchestrator) manages this transition with Adam's approval.
 
 </INSTRUCTIONS>

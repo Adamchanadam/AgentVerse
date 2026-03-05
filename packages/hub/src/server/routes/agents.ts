@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { AgentRepository } from "../../db/repositories/agent.repository.js";
+import { AgentStatsRepository } from "../../db/repositories/agent-stats.repository.js";
 
 interface AgentListQuery {
   q?: string;
@@ -9,6 +10,7 @@ interface AgentListQuery {
 
 export async function agentsRoute(app: FastifyInstance): Promise<void> {
   const repo = new AgentRepository(app.db);
+  const statsRepo = new AgentStatsRepository(app.db);
 
   app.get<{ Querystring: AgentListQuery }>(
     "/api/agents",
@@ -43,7 +45,25 @@ export async function agentsRoute(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const agent = await repo.findById(request.params.id);
       if (!agent) return reply.status(404).send({ error: "Agent not found" });
-      return agent;
+      const stats = await statsRepo.getStats(agent.id);
+      return {
+        ...agent,
+        stats: stats ? { wins: stats.wins, losses: stats.losses, xp: stats.xp } : null,
+      };
+    },
+  );
+
+  app.get<{ Params: { id: string } }>(
+    "/api/agents/:id/stats",
+    { preHandler: app.authenticate },
+    async (request, reply) => {
+      const agent = await repo.findById(request.params.id);
+      if (!agent) return reply.status(404).send({ error: "Agent not found" });
+      const stats = await statsRepo.getStats(agent.id);
+      return {
+        agentId: agent.id,
+        stats: stats ? { wins: stats.wins, losses: stats.losses, xp: stats.xp } : null,
+      };
     },
   );
 }

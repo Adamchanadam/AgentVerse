@@ -9,6 +9,7 @@ export interface Agent {
   badges: string[];
   createdAt: string;
   updatedAt: string;
+  stats?: { wins: number; losses: number; xp: number } | null;
 }
 
 export interface AgentsResponse {
