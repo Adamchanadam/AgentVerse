@@ -11,6 +11,12 @@ importers:
       '@eslint/js':
         specifier: ^9.18.0
         version: 9.39.3
+      '@noble/curves':
+        specifier: ^1.8.1
+        version: 1.9.7
+      '@noble/hashes':
+        specifier: ^1.8.0
+        version: 1.8.0
       '@types/node':
         specifier: ^22.10.0
         version: 22.19.13
@@ -38,6 +44,9 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.4(@types/node@22.19.13)(yaml@2.8.2)
+      ws:
+        specifier: ^8.19.0
+        version: 8.19.0
 
   packages/hub:
     dependencies:
